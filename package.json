@@ -1,13 +1,22 @@
 {
-  "name": "NeTrix-Platform",
+  "name": "netrix-platform",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "NeTrix MVP monorepo: a focused Golden Path prototype for an AI-native academic co-creation community.",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "corepack pnpm --filter @netrix/web dev",
+    "build": "corepack pnpm --filter @netrix/web build",
+    "lint": "corepack pnpm --filter @netrix/web lint",
+    "typecheck": "corepack pnpm --filter @netrix/web typecheck",
+    "test": "corepack pnpm lint && corepack pnpm typecheck"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "netrix",
+    "education",
+    "ai",
+    "mvp"
+  ],
+  "author": "NeTrix Team",
+  "license": "UNLICENSED",
   "packageManager": "pnpm@10.33.2"
 }

@@ -5,10 +5,14 @@ node_modules/
 # Environment
 .env
 .env.local
+.env.*.local
+!.env.example
 
 # Build
 .next/
 dist/
+out/
+*.tsbuildinfo
 __pycache__/
 *.pyc
 
