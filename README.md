@@ -1,66 +1,43 @@
 # NeTrix Platform
 
-NeTrix 是面向 UNNC 学生的 AI 原生学术共创社区 MVP。当前产品方向必须保持克制：先打磨一条高完成度的 Golden Path，证明学生可以进入学术节点、阅读高质量讨论帖，并在以人类为主导的论坛流里主动召唤 AI Oracle 作为“平权回答者”。
+NeTrix is an AI-assisted academic connection network for UNNC students. The product is designed to help academic questions, learning resources, study experience, personal academic identity, and peer connections circulate more effectively across the campus.
 
-## 当前决策
+This repository is currently maintained as a direction-first project workspace. It deliberately contains only the documents required to align product strategy, business planning, and MVP implementation before a new technical scaffold is introduced. Earlier prototype assumptions have been removed so that future work begins from the current product thesis rather than from outdated interface or architecture experiments.
 
-以 **核心 MVP 路线** 为准，不再按早期“大而全平台”路线开工。
+## Strategic Baseline
 
-- 只在 `apps/web` 中建设一个 Next.js Web 应用。
-- 先使用 mock 数据，稳定后再按需接入 Supabase 的 `posts` 和 `comments`。
-- 当前阶段不做登录鉴权、复杂 RLS、多表权限体系、FastAPI 匹配微服务，也不做泛校园 super-app。
-- 旧规划文档保留为战略演进记录，但不作为 techno 组当前执行依据。
-
-## 仓库结构
+The current strategic direction is defined in [docs/strategy/DIRECTION_MEMO.md](docs/strategy/DIRECTION_MEMO.md). In summary, NeTrix starts with Math, Computer Science, and EEE students at UNNC and validates the following product loop:
 
 ```text
-apps/
-  web/                    Next.js MVP 应用骨架与实现说明
-docs/
-  biz/                    CVP、USP、验证方法、商业模式建议
-  product/                产品定位、项目分析、路线图
-  tech/                   技术执行计划、API 合约、验收标准
-supabase/
-  schema.sql              MVP 阶段最小 posts/comments 表结构
-  seed.sql                路演可用种子数据
+academic posts -> academic profiles -> AI-assisted recommendations -> academic connections
 ```
 
-## 快速开始
+The first MVP is not intended to be a campus super-app, a generic AI chatbot, or a static resource directory. Its purpose is to demonstrate whether students will share academic signals through posts, convert those signals into trustworthy academic profiles, and use AI-assisted recommendations to discover relevant peers.
 
-如果本机没有 pnpm，先启用 corepack：
+## Repository Canon
 
-```bash
-corepack enable
-corepack prepare pnpm@10.33.2 --activate
-```
+The repository is organised around a small set of source documents. Each file has a distinct authority so that future business and technical work can reference the same baseline.
 
-然后安装依赖并启动：
+| File | Role |
+| --- | --- |
+| [AGENTS.md](AGENTS.md) | Collaboration protocol for Codex and other AI-assisted contributors. |
+| [SPEC.md](SPEC.md) | Product and engineering source of truth. Product direction changes must be reflected here before implementation work begins. |
+| [STATUS.md](STATUS.md) | Current programme state, open workstreams, and near-term execution sequence. |
+| [docs/strategy/DIRECTION_MEMO.md](docs/strategy/DIRECTION_MEMO.md) | Strategic direction memo for business-plan drafting and MVP planning. |
+| [docs/business/](docs/business) | Business-planning guidance for BP structure, CVP, USP, revenue logic, survey analysis, validation, and pitch narrative. |
 
-```bash
-corepack pnpm install
-corepack pnpm dev
-```
+## Working Protocol
 
-## MVP 范围
+All contributors should read `SPEC.md` and `STATUS.md` before changing product scope, technical scope, or documentation structure. The direction memo should be treated as the strategic narrative baseline, while `SPEC.md` should be treated as the operational constraint set for product and engineering decisions.
 
-产品 demo 至少包含：
+When the product direction changes, `SPEC.md` must be updated first. When the current operating status changes, `STATUS.md` must be updated. New business-plan or MVP implementation documents should extend these files rather than duplicate or contradict them.
 
-1. Protocol 与 Plugin 选择入口。
-2. 可点击学术节点的赛博神经网络地图。
-3. 基于 mock 数据或 Supabase 的论坛列表与帖子详情页。
-4. Summon Oracle 流程：包含 loading、类似流式输出的反馈、以及作为普通评论展示的 AI 回答。
-5. 一条可以在 3 分钟内完整讲完的路演路径。
+## Current Scope
 
-## 团队分工
+The first MVP should focus on a web-based academic community experience with three post types: Q&A posts, Resource posts, and Experience Sharing posts. The core AI functions are academic profile generation or refinement and academic connection recommendation. Connection should remain intentional: users request to connect, recipients accept or reject, and private messaging becomes available only after acceptance.
 
-- CS：视觉系统、React Flow 地图、页面切换、论坛 UI。
-- EEE：数据加载、Supabase 接入、状态管理、骨架屏与 loading 状态。
-- Math：种子内容生成、Oracle prompt/API route、demo 数据质量。
-- Biz：niche 验证、CVP/USP、GTM、定价假设、traction 叙事。
+The initial user wedge is Math, Computer Science, and EEE students. FAM, IBE, and the broader UNNC student body remain expansion opportunities after the first wedge has produced stronger validation.
 
-## 当前执行依据
+## Next Workstreams
 
-- 产品与商业路线：`docs/biz/BIZ_SUGGESTIONS_CVP_USP_MODEL.md`
-- 项目进展与路线图：`docs/product/PROJECT_ANALYSIS_AND_ROADMAP.md`
-- Techno 执行计划：`docs/tech/TECHNO_MVP_EXECUTION_PLAN.md`
-- API 合约：`docs/tech/API_CONTRACTS.md`
+The Biz guidance folder now provides the first business-plan writing system. The next major repository addition should be the Techno MVP implementation guide, which should translate the same thesis into MVP scope, data models, user flows, AI boundaries, backend requirements, UI/UX principles, and verification commands.
