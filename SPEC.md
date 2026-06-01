@@ -1,85 +1,93 @@
-# NeTrix Product And Engineering Specification
+# NeTrix 产品与工程规范
 
-`SPEC.md` is the operational source of truth for NeTrix. It defines the current product direction, MVP boundaries, AI role, and engineering constraints that must guide business-plan drafting, technical planning, and implementation work.
+`SPEC.md` 是 NeTrix 的操作性权威规范。它定义当前产品方向、MVP 边界、AI 角色和工程约束，并指导商业计划撰写、技术规划和实施工作。
 
-Any durable change to product positioning, target users, MVP scope, AI capability, data model, or technical architecture must be reflected in this file before other repository documents or code are updated.
+任何关于产品定位、目标用户、MVP 范围、AI 能力、数据模型或技术架构的长期变化，都必须先反映在本文件中，再更新仓库中的其他文档或代码。
 
-## 1. Programme Stage
+## 1. 项目阶段
 
-NeTrix has moved from early problem framing into a direction-locked MVP planning stage. The project is no longer trying to choose among unrelated platform concepts; it is now aligning Biz and Techno work around a single product thesis.
+NeTrix 已经从早期问题界定进入 MVP 方向锁定阶段。项目不再在多个无关的平台概念之间摇摆，而是围绕一个单一产品主线对齐商业组和技术组工作。
 
-At this stage, the repository should not contain speculative interface concepts or premature architecture decisions. The correct output is a coherent decision base from which the business plan, validation plan, and MVP implementation guide can be drafted.
+在这一阶段，仓库不应包含探索性的界面概念或过早的架构决策。正确产出应是一套连贯的决策基线，用于支撑商业计划、验证计划和 MVP 实施指南。
 
-## 2. Product Definition
+## 2. 产品定义
 
-NeTrix is an AI-assisted academic connection network for UNNC students. Students create academic signals through Q&A posts, Resource posts, and Experience Sharing posts. The platform uses those signals, together with user-confirmed academic profiles, to recommend relevant academic peers and support intentional academic connections.
+NeTrix 是一个面向 UNNC 学生的 AI 辅助学术连接网络。学生通过问答帖、资源帖和经验分享帖产生学术信号。平台将这些信号与用户确认的学术档案结合起来，推荐相关学术同伴，并支持有明确意图的学术连接。
 
-The governing product loop is:
+主导产品循环如下：
 
 ```text
-academic posts -> academic profiles -> AI-assisted recommendations -> academic connections
+学术帖子 -> 学术档案 -> AI 辅助推荐 -> 学术连接
 ```
 
-This loop is the central constraint for the first MVP. Features that do not strengthen at least one part of the loop should be deferred unless a later specification revision makes them necessary.
+该循环是第一版 MVP 的核心约束。除非后续规范修订明确要求，否则不能强化该循环至少一部分的功能都应后置。
 
-## 3. Strategic Scope
+## 3. 战略范围
 
-The external vision is UNNC-wide academic infrastructure. The initial validation wedge is narrower: Math, Computer Science, and EEE students at UNNC. This wedge is selected because these students are accessible, likely to share overlapping academic needs, and suitable for testing concrete use cases around modules, coursework, technical questions, resources, projects, and peer collaboration.
+对外愿景是建设 UNNC 范围内的学术基础设施。初始验证范围更窄，即 UNNC 的 Math、Computer Science 和 EEE 学生。选择这一切入点，是因为这些学生更容易触达，可能具有重叠的学术需求，也适合围绕课程模块、作业、技术问题、资源、项目和同伴协作测试具体使用场景。
 
-FAM, IBE, and the broader UNNC student body remain expansion paths. They should not be treated as first-phase requirements unless the project owner explicitly expands the validation scope.
+FAM、IBE 以及更广泛的 UNNC 学生群体仍然是后续扩展路径。除非项目负责人明确扩大验证范围，否则它们不应被视为第一阶段要求。
 
-## 4. MVP Product System
+## 4. MVP 产品系统
 
-The MVP should be designed as a web-based academic community rather than as a collection of isolated tools. Its primary entry point is a post feed, and its differentiated value comes from the way posts become profile signals and profile signals become explainable recommendations.
+MVP 应被设计为一个基于网页的学术社区，而不是一组彼此孤立的工具。它的主要入口是帖子信息流，差异化价值来自帖子如何转化为学术档案信号，以及学术档案信号如何转化为可解释推荐。
 
-| Layer | Required Role In MVP |
+| 层级 | MVP 中的必要作用 |
 | --- | --- |
-| Post Layer | Support Q&A posts, Resource posts, and Experience Sharing posts as the primary content and signal-generation mechanism. |
-| Profile Layer | Allow users to create foundational academic profiles and confirm or edit AI-assisted profile refinements. |
-| AI Recommendation Layer | Recommend academically relevant peers using profile fields, posts, tags, topics, modules, and interaction signals. |
-| Connection Layer | Support recommended profiles, request-to-connect, acceptance or rejection, and messaging only after acceptance. |
-| Library Layer | Provide a secondary resource centre formed from seeded resources and saved or promoted Resource posts. |
+| 帖子层 | 支持问答帖、资源帖和经验分享帖，作为主要内容和学术信号生成机制。 |
+| 档案层 | 允许用户创建基础学术档案，并确认或编辑 AI 辅助生成的档案优化内容。 |
+| AI 推荐层 | 使用档案字段、帖子、标签、主题、课程模块和交互信号推荐学术相关同伴。 |
+| 连接层 | 支持推荐档案、连接请求、接受或拒绝，以及接受连接后的消息功能。 |
+| 资源库层 | 提供辅助性的资源中心，由种子资源以及被保存或精选的资源帖构成。 |
 
-The Library is important, but it is not the primary product identity. The main product identity is academic connection enabled by posts, profiles, and AI-assisted recommendations.
+资源库很重要，但它不是产品的主要身份。NeTrix 的主要产品身份是由帖子、档案和 AI 辅助推荐共同支撑的学术连接。
 
-## 5. AI Role And Constraints
+## 5. AI 角色与约束
 
-AI is a core enabling layer, not the main user interface. The first MVP should use real LLM functionality for two purposes: academic profile generation or refinement, and academic connection recommendation.
+AI 是核心赋能层，而不是主要用户界面。第一版 MVP 应将真实 LLM 能力用于两个目的：学术档案生成或优化，以及学术连接推荐。
 
-AI-generated outputs must remain user-confirmable and explainable. A recommended connection should make clear why the person is relevant, which signals informed the recommendation, and what academic context the user may share with that person. The MVP should avoid black-box matching, a homepage chatbot as the primary experience, and any dependency on importing memory from external AI products.
+AI 生成内容必须可由用户确认，并且推荐结果必须可解释。一个推荐连接应清楚说明此人为什么相关、哪些信号支撑了推荐，以及用户可能与此人共享怎样的学术语境。MVP 应避免黑箱匹配、以首页聊天机器人作为主要体验，以及依赖外部 AI 产品的记忆导入。
 
-The guiding principle is that AI should help academic information and people become more discoverable. It should not replace student interaction or move learning further into private black-box environments.
+指导原则是：AI 应帮助学术信息和相关同伴更容易被发现。它不应替代学生互动，也不应把学习进一步推入私密黑箱环境。
 
-## 6. Identity, Trust, And Access
+## 6. 身份、信任与访问
 
-The MVP should require campus email verification. The product depends on trust, academic relevance, and a bounded UNNC context; verified access is therefore part of the core design rather than a later security enhancement.
+MVP 应要求校园邮箱验证。该产品依赖信任、学术相关性和有边界的 UNNC 语境，因此已验证访问是核心设计的一部分，而不是后置安全增强。
 
-The identity model should use academic-background-based nicknames rather than forcing a fully professional real-name networking style. After a user completes the basic profile, AI may suggest unique academic nickname options, and the user must be able to modify and confirm the final choice.
+身份模型应使用基于学术背景的昵称，而不是强迫用户采用完全职业化的实名社交方式。用户完成基础档案后，AI 可以推荐不重复的学术昵称选项，用户必须能够修改并确认最终选择。
 
-## 7. MVP Inclusion And Exclusion
+## 7. MVP 包含与排除
 
-The first MVP must include a real web platform, a real backend, campus email verification, user profiles, academic nickname support, the three post types, a main post feed, a basic Library or Resource Centre, AI-assisted academic profile generation or refinement, AI-assisted academic connection recommendation, explainable recommended profile cards, request-to-connect, and messaging after accepted connection.
+第一版 MVP 必须包含真实网页平台、真实后端、校园邮箱验证、用户档案、学术昵称支持、三类帖子、主信息流、基础资源库或资源中心、AI 辅助学术档案生成或优化、AI 辅助学术连接推荐、可解释的推荐档案卡片、连接请求，以及接受连接后的消息功能。
 
-The first MVP should exclude a generic campus super-app scope, an AI chatbot as the main product interface, complex black-box matching, overly stylised cyberpunk or sci-fi interface concepts, large-scale UNNC-wide deployment, and direct reliance on external AI memory systems.
+第一版 MVP 应排除通用校园超级应用、以 AI 聊天机器人作为主界面、复杂黑箱匹配、过度风格化的赛博或科幻界面、大规模 UNNC 全校部署，以及对外部 AI 记忆系统的直接依赖。
 
-## 8. UX Direction
+## 8. UX 方向
 
-The approved UX direction is:
+已批准的 UX 方向是：
 
 ```text
-Academic Feed-first + Profile Sidecar
+学术信息流优先 + 档案侧栏
 ```
 
-The product should feel like an intelligent academic community rather than a standalone AI utility. The main screen should privilege posts and academic discovery. On desktop, a profile sidecar may surface academic portrait progress, profile signals, AI suggestions, recommended connections, and pending requests. On mobile, the same functions may become a dedicated profile or connection area.
+产品应让用户感觉进入了一个智能学术社区，而不是一个独立 AI 工具。主屏幕应优先呈现帖子和学术发现。在桌面端，档案侧栏可以展示学术画像进度、档案信号、AI 建议、推荐连接和待处理请求。在移动端，相同功能可以转为独立的档案或连接区域。
 
-Visual design should be clean, academic, warm, and socially credible. It should avoid cyberpunk aesthetics, exaggerated AI branding, corporate LinkedIn imitation, and administrative school-portal styling.
+视觉设计应保持干净、学术、温暖，并具备社交可信度。它应避免赛博风格、夸张 AI 品牌感、企业化 LinkedIn 模仿，以及学校行政门户式界面。
 
-## 9. Evidence And Validation
+## 9. 证据与验证
 
-The existing survey responses should be treated as early signal rather than proof of market demand. They may support problem discovery and initial segmentation, but the next evidence layer should include targeted interviews with Math, CS, and EEE students, seeded-content testing, MVP usability testing, and observation of whether users actually post, refine profiles, request connections, and message after acceptance.
+现有问卷回复应被视为早期信号，而不是市场需求的证明。它们可以支持问题发现和初步分群，但下一层证据应包括针对 Math、CS 和 EEE 学生的定向访谈、种子内容测试、MVP 可用性测试，以及观察用户是否真实发帖、优化档案、发起连接并在接受后发送消息。
 
-The primary validation question is not whether students generally like the idea of a platform. The primary question is whether the post-to-profile-to-recommendation-to-connection loop creates enough practical academic value for repeated use.
+主要验证问题不是学生是否笼统喜欢一个平台想法，而是“帖子到档案、推荐、连接”的循环是否能创造足够实用的学术价值，使用户愿意重复使用。
 
-## 10. Change Control
+## 10. 变更控制
 
-This specification must be updated before any of the following changes are made elsewhere in the repository: changing the first user wedge, changing the post taxonomy, changing the AI role, changing the connection model, introducing a new technical stack, adding a backend service, or reframing NeTrix as a different product category.
+在仓库其他位置进行以下任何变化之前，必须先更新本规范：改变第一批用户切入点、改变帖子分类、改变 AI 角色、改变连接模型、引入新的技术栈、增加后端服务，或将 NeTrix 重新定义为不同产品类别。
+
+## 11. 技术实施基线
+
+第一版 MVP 应使用 `apps/web` 下的单一网页应用。已锁定的技术基线是 Next.js App Router、TypeScript、Tailwind CSS、Supabase Auth、Supabase Postgres、Drizzle、通过 `corepack pnpm` 执行包管理命令，以及通过专用 AI 封装层进行服务端 LLM 调用。
+
+选择该基线是为了支持当前 MVP 约束：校园邮箱验证、关系型数据、行级安全策略、类型化应用开发、受保护的 AI 凭据，以及从脚手架快速推进到可演示的“帖子到档案、推荐、连接”闭环。未来若脱离该技术栈，应被视为架构变更，并在实施前记录到本规范。
+
+所有 LLM 调用必须留在服务端。提示词版本、结构化输入摘要、输出结构、校验失败和生成的推荐解释，都应能通过应用数据追踪，而不是隐藏在界面组件或一次性脚本中。

@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1220" height="660" viewBox="0 0 1220 660">
+<rect width="100%" height="100%" fill="#FFFFFF"/>
+<text x="36" y="44" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="760" fill="#1F2933" text-anchor="start">Feature Preference Dot Plot</text>
+<text x="36" y="70" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748B" text-anchor="start">Multi-select desired platform functions; percentage is share of respondents selecting each option</text>
+<text x="42" y="130" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">Research / internship opportunities</text>
+<line x1="445.0" y1="100" x2="445.0" y2="580" stroke="#EDF1F5"/>
+<line x1="575.0" y1="100" x2="575.0" y2="580" stroke="#EDF1F5"/>
+<line x1="705.0" y1="100" x2="705.0" y2="580" stroke="#EDF1F5"/>
+<line x1="835.0" y1="100" x2="835.0" y2="580" stroke="#EDF1F5"/>
+<line x1="965.0" y1="100" x2="965.0" y2="580" stroke="#EDF1F5"/>
+<line x1="445" y1="125" x2="852.2" y2="125" stroke="#2E5E88" stroke-width="3"/>
+<circle cx="852.2" cy="125" r="9" fill="#2E5E88"/>
+<text x="995" y="130" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#2E5E88" text-anchor="start">47 (78.3%)</text>
+<text x="42" y="188" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">Research experience and application writing</text>
+<line x1="445.0" y1="100" x2="445.0" y2="580" stroke="#EDF1F5"/>
+<line x1="575.0" y1="100" x2="575.0" y2="580" stroke="#EDF1F5"/>
+<line x1="705.0" y1="100" x2="705.0" y2="580" stroke="#EDF1F5"/>
+<line x1="835.0" y1="100" x2="835.0" y2="580" stroke="#EDF1F5"/>
+<line x1="965.0" y1="100" x2="965.0" y2="580" stroke="#EDF1F5"/>
+<line x1="445" y1="183" x2="774.2" y2="183" stroke="#2E5E88" stroke-width="3"/>
+<circle cx="774.2" cy="183" r="9" fill="#2E5E88"/>
+<text x="995" y="188" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#2E5E88" text-anchor="start">38 (63.3%)</text>
+<text x="42" y="246" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">Course reviews and module-selection advice</text>
+<line x1="445.0" y1="100" x2="445.0" y2="580" stroke="#EDF1F5"/>
+<line x1="575.0" y1="100" x2="575.0" y2="580" stroke="#EDF1F5"/>
+<line x1="705.0" y1="100" x2="705.0" y2="580" stroke="#EDF1F5"/>
+<line x1="835.0" y1="100" x2="835.0" y2="580" stroke="#EDF1F5"/>
+<line x1="965.0" y1="100" x2="965.0" y2="580" stroke="#EDF1F5"/>
+<line x1="445" y1="241" x2="765.8" y2="241" stroke="#2E5E88" stroke-width="3"/>
+<circle cx="765.8" cy="241" r="9" fill="#2E5E88"/>
+<text x="995" y="246" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#2E5E88" text-anchor="start">37 (61.7%)</text>
+<text x="42" y="304" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">Subject Q&amp;A and academic discussion</text>
+<line x1="445.0" y1="100" x2="445.0" y2="580" stroke="#EDF1F5"/>
+<line x1="575.0" y1="100" x2="575.0" y2="580" stroke="#EDF1F5"/>
+<line x1="705.0" y1="100" x2="705.0" y2="580" stroke="#EDF1F5"/>
+<line x1="835.0" y1="100" x2="835.0" y2="580" stroke="#EDF1F5"/>
+<line x1="965.0" y1="100" x2="965.0" y2="580" stroke="#EDF1F5"/>
+<line x1="445" y1="299" x2="713.8" y2="299" stroke="#2F8F83" stroke-width="3"/>
+<circle cx="713.8" cy="299" r="9" fill="#2F8F83"/>
+<text x="995" y="304" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#2F8F83" text-anchor="start">31 (51.7%)</text>
+<text x="42" y="362" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">Study materials and note sharing</text>
+<line x1="445.0" y1="100" x2="445.0" y2="580" stroke="#EDF1F5"/>
+<line x1="575.0" y1="100" x2="575.0" y2="580" stroke="#EDF1F5"/>
+<line x1="705.0" y1="100" x2="705.0" y2="580" stroke="#EDF1F5"/>
+<line x1="835.0" y1="100" x2="835.0" y2="580" stroke="#EDF1F5"/>
+<line x1="965.0" y1="100" x2="965.0" y2="580" stroke="#EDF1F5"/>
+<line x1="445" y1="357" x2="705.0" y2="357" stroke="#2F8F83" stroke-width="3"/>
+<circle cx="705.0" cy="357" r="9" fill="#2F8F83"/>
+<text x="995" y="362" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#2F8F83" text-anchor="start">30 (50.0%)</text>
+<text x="42" y="420" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">Academic lectures and event aggregation</text>
+<line x1="445.0" y1="100" x2="445.0" y2="580" stroke="#EDF1F5"/>
+<line x1="575.0" y1="100" x2="575.0" y2="580" stroke="#EDF1F5"/>
+<line x1="705.0" y1="100" x2="705.0" y2="580" stroke="#EDF1F5"/>
+<line x1="835.0" y1="100" x2="835.0" y2="580" stroke="#EDF1F5"/>
+<line x1="965.0" y1="100" x2="965.0" y2="580" stroke="#EDF1F5"/>
+<line x1="445" y1="415" x2="627.0" y2="415" stroke="#2F8F83" stroke-width="3"/>
+<circle cx="627.0" cy="415" r="9" fill="#2F8F83"/>
+<text x="995" y="420" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#2F8F83" text-anchor="start">21 (35.0%)</text>
+<text x="42" y="478" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">Overall university planning</text>
+<line x1="445.0" y1="100" x2="445.0" y2="580" stroke="#EDF1F5"/>
+<line x1="575.0" y1="100" x2="575.0" y2="580" stroke="#EDF1F5"/>
+<line x1="705.0" y1="100" x2="705.0" y2="580" stroke="#EDF1F5"/>
+<line x1="835.0" y1="100" x2="835.0" y2="580" stroke="#EDF1F5"/>
+<line x1="965.0" y1="100" x2="965.0" y2="580" stroke="#EDF1F5"/>
+<line x1="445" y1="473" x2="453.8" y2="473" stroke="#5F6C7B" stroke-width="3"/>
+<circle cx="453.8" cy="473" r="9" fill="#5F6C7B"/>
+<text x="995" y="478" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#5F6C7B" text-anchor="start">1 (1.7%)</text>
+<text x="42" y="536" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">Interview knowledge and course-related online videos/books</text>
+<line x1="445.0" y1="100" x2="445.0" y2="580" stroke="#EDF1F5"/>
+<line x1="575.0" y1="100" x2="575.0" y2="580" stroke="#EDF1F5"/>
+<line x1="705.0" y1="100" x2="705.0" y2="580" stroke="#EDF1F5"/>
+<line x1="835.0" y1="100" x2="835.0" y2="580" stroke="#EDF1F5"/>
+<line x1="965.0" y1="100" x2="965.0" y2="580" stroke="#EDF1F5"/>
+<line x1="445" y1="531" x2="453.8" y2="531" stroke="#5F6C7B" stroke-width="3"/>
+<circle cx="453.8" cy="531" r="9" fill="#5F6C7B"/>
+<text x="995" y="536" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#5F6C7B" text-anchor="start">1 (1.7%)</text>
+<text x="445.0" y="610" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748B" text-anchor="middle">0%</text>
+<text x="575.0" y="610" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748B" text-anchor="middle">25%</text>
+<text x="705.0" y="610" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748B" text-anchor="middle">50%</text>
+<text x="835.0" y="610" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748B" text-anchor="middle">75%</text>
+<text x="965.0" y="610" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748B" text-anchor="middle">100%</text>
+</svg>

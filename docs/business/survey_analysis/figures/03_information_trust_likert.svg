@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1220" height="610" viewBox="0 0 1220 610">
+<rect width="100%" height="100%" fill="#FFFFFF"/>
+<text x="36" y="44" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="760" fill="#1F2933" text-anchor="start">Information And Trust Attitudes</text>
+<text x="36" y="70" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748B" text-anchor="start">Distributional view of information scarcity, centralised information value, anonymity, and commenting</text>
+<text x="42" y="148" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#1F2933" text-anchor="start">Information scarcity</text>
+<rect x="365.0" y="130" width="30.5" height="30" rx="4" fill="#5F6C7B" opacity="0.88"/>
+<rect x="395.5" y="130" width="325.3" height="30" rx="4" fill="#D88A3D" opacity="0.88"/>
+<text x="558.1666666666666" y="150" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">32</text>
+<rect x="720.8" y="130" width="162.7" height="30" rx="4" fill="#2F8F83" opacity="0.88"/>
+<text x="802.1666666666666" y="150" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">16</text>
+<rect x="883.5" y="130" width="91.5" height="30" rx="4" fill="#2E5E88" opacity="0.88"/>
+<text x="929.2499999999999" y="150" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">9</text>
+<text x="1000" y="150" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748B" text-anchor="start">60 total</text>
+<text x="42" y="243" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#1F2933" text-anchor="start">Centralised information value</text>
+<rect x="365.0" y="225" width="50.8" height="30" rx="4" fill="#5F6C7B" opacity="0.88"/>
+<text x="390.4166666666667" y="245" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">5</text>
+<rect x="415.8" y="225" width="203.3" height="30" rx="4" fill="#D88A3D" opacity="0.88"/>
+<text x="517.5" y="245" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">20</text>
+<rect x="619.2" y="225" width="355.8" height="30" rx="4" fill="#2F8F83" opacity="0.88"/>
+<text x="797.0833333333333" y="245" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">35</text>
+<text x="1000" y="245" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748B" text-anchor="start">60 total</text>
+<text x="42" y="338" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#1F2933" text-anchor="start">Anonymous questioning preference</text>
+<rect x="365.0" y="320" width="20.3" height="30" rx="4" fill="#5F6C7B" opacity="0.88"/>
+<rect x="385.3" y="320" width="213.5" height="30" rx="4" fill="#D88A3D" opacity="0.88"/>
+<text x="492.0833333333333" y="340" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">21</text>
+<rect x="598.8" y="320" width="376.2" height="30" rx="4" fill="#2F8F83" opacity="0.88"/>
+<text x="786.9166666666666" y="340" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">37</text>
+<text x="1000" y="340" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748B" text-anchor="start">60 total</text>
+<text x="42" y="433" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#1F2933" text-anchor="start">Casual commenting habit</text>
+<rect x="365.0" y="415" width="254.2" height="30" rx="4" fill="#5F6C7B" opacity="0.88"/>
+<text x="492.0833333333333" y="435" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">25</text>
+<rect x="619.2" y="415" width="305.0" height="30" rx="4" fill="#D88A3D" opacity="0.88"/>
+<text x="771.6666666666666" y="435" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">30</text>
+<rect x="924.2" y="415" width="50.8" height="30" rx="4" fill="#2F8F83" opacity="0.88"/>
+<text x="949.5833333333333" y="435" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">5</text>
+<text x="1000" y="435" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748B" text-anchor="start">60 total</text>
+<rect x="365" y="535" width="14" height="14" rx="3" fill="#5F6C7B"/>
+<text x="385" y="548" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748B" text-anchor="start">Low / no</text>
+<rect x="365" y="535" width="14" height="14" rx="3" fill="#D88A3D"/>
+<text x="540" y="548" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748B" text-anchor="start">Moderate</text>
+<rect x="365" y="535" width="14" height="14" rx="3" fill="#2F8F83"/>
+<text x="695" y="548" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748B" text-anchor="start">Positive / yes</text>
+<rect x="365" y="535" width="14" height="14" rx="3" fill="#2E5E88"/>
+<text x="850" y="548" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748B" text-anchor="start">Strong / always</text>
+</svg>

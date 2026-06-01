@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1220" height="700" viewBox="0 0 1220 700">
+<rect width="100%" height="100%" fill="#FFFFFF"/>
+<text x="36" y="44" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="760" fill="#1F2933" text-anchor="start">Study-Buddy Discovery Flow</text>
+<text x="36" y="70" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748B" text-anchor="start">Single-select interest status plus reported discovery routes among those who tried</text>
+<text x="42" y="115" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="750" fill="#1F2933" text-anchor="start">Interest status</text>
+<text x="42" y="167" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">Considered but not acted</text>
+<rect x="252" y="150" width="360" height="24" rx="12" fill="#EDF1F5"/>
+<rect x="252" y="150" width="191.9" height="24" rx="12" fill="#D88A3D"/>
+<text x="630" y="168" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#D88A3D" text-anchor="start">32 (53.3%)</text>
+<text x="42" y="237" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">Tried to find one</text>
+<rect x="252" y="220" width="360" height="24" rx="12" fill="#EDF1F5"/>
+<rect x="252" y="220" width="101.9" height="24" rx="12" fill="#2E5E88"/>
+<text x="630" y="238" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#2E5E88" text-anchor="start">17 (28.3%)</text>
+<text x="42" y="307" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">Never considered</text>
+<rect x="252" y="290" width="360" height="24" rx="12" fill="#EDF1F5"/>
+<rect x="252" y="290" width="65.9" height="24" rx="12" fill="#5F6C7B"/>
+<text x="630" y="308" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#5F6C7B" text-anchor="start">11 (18.3%)</text>
+<text x="680" y="115" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="750" fill="#1F2933" text-anchor="start">Attempted discovery routes</text>
+<circle cx="720" cy="165" r="34" fill="#2E5E88" opacity="0.9"/>
+<text x="720" y="171" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="850" fill="white" text-anchor="middle">13</text>
+<path d="M 760 165 C 830 135, 880 135, 950 165" fill="none" stroke="#2E5E88" stroke-width="13" opacity="0.72"/>
+<text x="970" y="170" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#1F2933" text-anchor="start">Existing friends</text>
+<circle cx="720" cy="251" r="34" fill="#2F8F83" opacity="0.9"/>
+<text x="720" y="257" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="850" fill="white" text-anchor="middle">4</text>
+<path d="M 760 251 C 830 221, 880 221, 950 251" fill="none" stroke="#2F8F83" stroke-width="4" opacity="0.72"/>
+<text x="970" y="256" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#1F2933" text-anchor="start">Introductions</text>
+<circle cx="720" cy="337" r="34" fill="#D88A3D" opacity="0.9"/>
+<text x="720" y="343" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="850" fill="white" text-anchor="middle">1</text>
+<path d="M 760 337 C 830 307, 880 307, 950 337" fill="none" stroke="#D88A3D" stroke-width="3" opacity="0.72"/>
+<text x="970" y="342" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#1F2933" text-anchor="start">Public channels</text>
+<text x="680" y="505" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" text-anchor="start">EDA note: the survey suggests latent study-buddy interest,</text>
+<text x="680" y="523" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" text-anchor="start">while attempted discovery remains concentrated in existing</text>
+<text x="680" y="541" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" text-anchor="start">social networks.</text>
+</svg>

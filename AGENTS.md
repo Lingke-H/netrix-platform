@@ -28,13 +28,15 @@ New features, documents, and technical decisions should be evaluated by whether 
 
 ## Technical Boundary
 
-The repository is currently a direction-first workspace and does not retain the previous web scaffold. A future MVP may use Next.js, TypeScript, Tailwind CSS, and `corepack pnpm`, but those choices should be formalised in a Techno MVP implementation guide before code is reintroduced.
+The repository is currently a direction-first workspace and does not retain the previous web scaffold. The first MVP technical baseline is now formalised as `apps/web` with Next.js App Router, TypeScript, Tailwind CSS, Supabase Auth/Postgres, Drizzle, server-side LLM access, and commands invoked through `corepack pnpm`.
 
-Contributors should avoid adding frameworks, external services, or heavy dependencies before the MVP architecture is documented. If package management is reintroduced, prefer commands invoked through `corepack pnpm` rather than assuming that a global `pnpm` binary is available.
+Contributors should avoid adding frameworks, external services, or heavy dependencies outside this baseline unless `SPEC.md` is updated first. Do not assume that a global `pnpm` binary is available; use `corepack pnpm` in documentation, scripts, and delivery notes.
 
 ## Documentation Standard
 
-Repository documents should read as professional reference material rather than meeting notes. The preferred style is formal, native English with clear hierarchy, stable terminology, and explicit ownership of decisions, assumptions, and open questions. Internal Chinese notes may be used when the project owner requests them, but canonical repository files should remain coherent as a shared reference for Biz, Techno, and product contributors.
+Repository documents should read as professional reference material rather than meeting notes. Each document should use its chosen language cleanly. English documents should be written in formal, native English with clear hierarchy and stable terminology. Chinese documents should be written in natural, polished, professional Chinese, retaining English only for product names, technical stack names, code identifiers, paths, commands, and terms that would become less precise if translated.
+
+Canonical repository files should remain coherent as a shared reference for Biz, Techno, and product contributors. Mixed-language prose should be avoided unless it is necessary for a precise technical reference.
 
 Business and strategy documents should distinguish evidence, assumptions, and recommendations. Technical documents should distinguish confirmed scope, proposed architecture, deferred work, and verification requirements. Unvalidated commercial claims should not be written as settled conclusions.
 
@@ -42,7 +44,7 @@ Business and strategy documents should distinguish evidence, assumptions, and re
 
 When the repository contains executable code, contributors must run verification commands appropriate to the scope of the change before delivery. The final response should state which checks were run and whether any residual risk remains. For documentation-only changes, it is acceptable to skip code verification, provided that the final response says so clearly.
 
-If the future web MVP uses the previously discussed JavaScript toolchain, the likely verification family will include:
+When the web MVP scaffold is reintroduced, the verification family should include:
 
 ```bash
 corepack pnpm lint
@@ -50,7 +52,7 @@ corepack pnpm typecheck
 corepack pnpm build
 ```
 
-The authoritative verification commands should be defined in the future Techno MVP implementation guide once the stack is finalised.
+The authoritative verification commands are defined by the Dev implementation plan and should be kept aligned with package scripts once code exists.
 
 ## Git And Collaboration Rules
 

@@ -1,43 +1,46 @@
 # NeTrix Platform
 
-NeTrix is an AI-assisted academic connection network for UNNC students. The product is designed to help academic questions, learning resources, study experience, personal academic identity, and peer connections circulate more effectively across the campus.
+NeTrix 是一个面向 UNNC 学生的 AI 辅助学术连接网络。它希望让学术问题、学习资源、学习经验、个人学术身份和同伴连接在校园内更高效地流动。
 
-This repository is currently maintained as a direction-first project workspace. It deliberately contains only the documents required to align product strategy, business planning, and MVP implementation before a new technical scaffold is introduced. Earlier prototype assumptions have been removed so that future work begins from the current product thesis rather than from outdated interface or architecture experiments.
+本仓库目前是一个以方向确认为核心的项目工作区。在新的技术脚手架重新引入之前，仓库只保留用于对齐产品战略、商业规划和 MVP 实施的必要文档。早期原型中的旧假设已经移除，后续工作应从当前产品主线出发，而不是沿用已经过时的界面或架构实验。
 
-## Strategic Baseline
+## 战略基线
 
-The current strategic direction is defined in [docs/strategy/DIRECTION_MEMO.md](docs/strategy/DIRECTION_MEMO.md). In summary, NeTrix starts with Math, Computer Science, and EEE students at UNNC and validates the following product loop:
+当前战略方向由 [docs/strategy/DIRECTION_MEMO.md](docs/strategy/DIRECTION_MEMO.md) 定义。简而言之，NeTrix 将从 UNNC 的 Math、Computer Science 和 EEE 学生切入，并验证以下产品循环：
 
 ```text
-academic posts -> academic profiles -> AI-assisted recommendations -> academic connections
+学术帖子 -> 学术档案 -> AI 辅助推荐 -> 学术连接
 ```
 
-The first MVP is not intended to be a campus super-app, a generic AI chatbot, or a static resource directory. Its purpose is to demonstrate whether students will share academic signals through posts, convert those signals into trustworthy academic profiles, and use AI-assisted recommendations to discover relevant peers.
+第一版 MVP 不是校园超级应用、通用 AI 聊天机器人，也不是静态资源目录。它的目标是验证学生是否愿意通过帖子分享学术信号，是否能将这些信号转化为可信的学术档案，并进一步通过 AI 辅助推荐发现相关同伴。
 
-## Repository Canon
+## 仓库规范源
 
-The repository is organised around a small set of source documents. Each file has a distinct authority so that future business and technical work can reference the same baseline.
+本仓库围绕少量核心文档组织。每个文件都有明确作用，确保后续商业和技术工作可以引用同一套基线。
 
-| File | Role |
+| 文件 | 作用 |
 | --- | --- |
-| [AGENTS.md](AGENTS.md) | Collaboration protocol for Codex and other AI-assisted contributors. |
-| [SPEC.md](SPEC.md) | Product and engineering source of truth. Product direction changes must be reflected here before implementation work begins. |
-| [STATUS.md](STATUS.md) | Current programme state, open workstreams, and near-term execution sequence. |
-| [docs/strategy/DIRECTION_MEMO.md](docs/strategy/DIRECTION_MEMO.md) | Strategic direction memo for business-plan drafting and MVP planning. |
-| [docs/business/](docs/business) | Business-planning guidance for BP structure, CVP, USP, revenue logic, survey analysis, validation, and pitch narrative. |
+| [AGENTS.md](AGENTS.md) | Codex 和其他 AI 辅助贡献者的协作协议。 |
+| [SPEC.md](SPEC.md) | 产品与工程的权威规范。产品方向发生变化时，必须先更新该文件，再开始实施。 |
+| [STATUS.md](STATUS.md) | 当前项目状态、开放工作流和近期执行顺序。 |
+| [docs/strategy/DIRECTION_MEMO.md](docs/strategy/DIRECTION_MEMO.md) | 用于商业计划撰写和 MVP 规划的战略方向备忘录。 |
+| [docs/business/](docs/business) | 商业规划指导，覆盖商业计划结构、CVP、USP、收入逻辑、问卷分析、验证计划和路演叙事。 |
+| [docs/dev/](docs/dev) | 中文开发操作手册，覆盖已锁定的 MVP 技术栈、架构、契约、协作流程、数据、AI、安全和交付质量。 |
 
-## Working Protocol
+## 工作协议
 
-All contributors should read `SPEC.md` and `STATUS.md` before changing product scope, technical scope, or documentation structure. The direction memo should be treated as the strategic narrative baseline, while `SPEC.md` should be treated as the operational constraint set for product and engineering decisions.
+所有贡献者在修改产品范围、技术范围或文档结构之前，都应先阅读 `SPEC.md` 和 `STATUS.md`。方向备忘录是战略叙事基线，`SPEC.md` 是产品和工程决策的操作性约束。
 
-When the product direction changes, `SPEC.md` must be updated first. When the current operating status changes, `STATUS.md` must be updated. New business-plan or MVP implementation documents should extend these files rather than duplicate or contradict them.
+当产品方向发生变化时，必须先更新 `SPEC.md`。当当前项目状态发生变化时，必须更新 `STATUS.md`。新的商业计划文档或 MVP 实施文档应在这些文件基础上延展，不应重复或违背其中内容。
 
-## Current Scope
+## 当前范围
 
-The first MVP should focus on a web-based academic community experience with three post types: Q&A posts, Resource posts, and Experience Sharing posts. The core AI functions are academic profile generation or refinement and academic connection recommendation. Connection should remain intentional: users request to connect, recipients accept or reject, and private messaging becomes available only after acceptance.
+第一版 MVP 应聚焦一个基于网页的学术社区体验，并包含三类帖子：问答帖、资源帖和经验分享帖。核心 AI 功能是学术档案生成或优化，以及学术连接推荐。连接机制应保持明确意图：用户发起连接请求，接收方接受或拒绝，私信功能仅在接受之后开放。
 
-The initial user wedge is Math, Computer Science, and EEE students. FAM, IBE, and the broader UNNC student body remain expansion opportunities after the first wedge has produced stronger validation.
+初始用户切入点是 Math、Computer Science 和 EEE 学生。FAM、IBE 以及更广泛的 UNNC 学生群体，是第一轮切入点获得更强验证之后的扩展机会。
 
-## Next Workstreams
+## 下一步工作流
 
-The Biz guidance folder now provides the first business-plan writing system. The next major repository addition should be the Techno MVP implementation guide, which should translate the same thesis into MVP scope, data models, user flows, AI boundaries, backend requirements, UI/UX principles, and verification commands.
+`docs/business/` 已经提供第一套商业计划写作体系，`docs/dev/` 则将同一产品主线转化为实施操作手册。第一版 MVP 的技术基线已锁定为：`apps/web`、Next.js App Router、TypeScript、Tailwind CSS、Supabase Auth/Postgres、Drizzle、服务端 LLM 调用，以及 `corepack pnpm`。
+
+仓库的下一个主要增量应是实际的网页 MVP 脚手架。该脚手架应基于开发手册构建，而不是重新展开架构讨论。

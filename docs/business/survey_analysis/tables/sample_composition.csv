@@ -1,0 +1,18 @@
+category,item,count,percent
+international_status,Non-international,56,93.3
+international_status,International,4,6.7
+year,Year 1,8,13.3
+year,Year 2,47,78.3
+year,Year 3,1,1.7
+year,Year 4,3,5.0
+year,Postgraduate,1,1.7
+help_frequency,Never,5,8.3
+help_frequency,Occasionally (1-2 times),23,38.3
+help_frequency,Sometimes (3-4 times),13,21.7
+help_frequency,Often (5+ times),11,18.3
+help_frequency,Almost daily (>5/week),1,1.7
+help_frequency,Daily,7,11.7
+solution_method,Use AI tools,55,91.7
+solution_method,Discuss with classmates/friends,2,3.3
+solution_method,Think independently,2,3.3
+solution_method,Ask professors,1,1.7

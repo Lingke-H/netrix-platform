@@ -108,9 +108,11 @@ First, the problem is real enough to investigate further. Many respondents exper
 
 The business plan should not claim that the survey proves population-level demand. It should state that the survey provides early discovery evidence and motivates the next validation stage.
 
-## 9. Recommended Follow-Up Analysis
+## 9. Dedicated Analysis Outputs
 
-The next analytical step should be to create an anonymised dataset and a short descriptive analysis workbook. That workbook should include cleaned major categories, first-wedge tagging, count and percentage tables, multi-select response coding, and charts for the most important business-plan findings.
+A dedicated analysis folder now records the current descriptive analysis outputs: `docs/business/survey_analysis/`. It contains an EDA report, methodology note, SVG visualisations, and aggregate CSV tables. These outputs provide survey evidence that the Biz team can interpret and integrate into the business plan.
+
+If the team later needs a respondent-level analysis workbook, it should be created from an anonymised version of the dataset. That workbook should include cleaned major categories, first-wedge tagging, count and percentage tables, multi-select response coding, and charts for the most important business-plan findings, without preserving names, emails, or other personally identifiable information.
 
 The next research step should be 8 to 12 targeted interviews with Math, Computer Science, and EEE students. Those interviews should test whether the specific first-wedge users understand the post-profile-recommendation-connection loop and whether they would take real actions inside it.
 

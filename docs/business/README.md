@@ -27,6 +27,7 @@ The Biz folder should use the Direction Memo as its source of strategic narrativ
 | `CVP_USP_REVENUE_GUIDE.md` | Explains how to determine the customer value proposition, unique selling proposition, and revenue model without overclaiming. |
 | `RESEARCH_AND_SURVEY_ANALYSIS_GUIDE.md` | Explains how to use the existing 60 survey responses responsibly, including when statistical inference is or is not appropriate. |
 | `SURVEY_ANALYSIS_BRIEF.md` | Summarises the current 60-response dataset at an anonymised aggregate level for business-plan reference. |
+| `survey_analysis/` | Stores the dedicated survey analysis report, methodology note, SVG visualisations, and aggregate CSV tables. |
 | `MARKET_VALIDATION_GUIDE.md` | Defines the next validation plan for interviews, seeded-content testing, MVP testing, and success metrics. |
 | `PITCH_NARRATIVE_GUIDE.md` | Provides a coherent pitch storyline, positioning language, and argument structure for presentations. |
 
@@ -34,7 +35,7 @@ The Biz folder should use the Direction Memo as its source of strategic narrativ
 
 The Biz team should begin by reading the Direction Memo in full. After that, the team should use `BUSINESS_PLAN_WRITING_GUIDE.md` to understand the expected final structure of the business plan. The CVP, USP, and revenue model should then be drafted with `CVP_USP_REVENUE_GUIDE.md`, because these decisions affect the entire commercial logic of the plan.
 
-The survey and validation documents should be used before writing the market evidence section. The existing 60 survey responses can support problem discovery and early segmentation, but they should not be presented as conclusive market proof unless the sampling method justifies that level of claim. `SURVEY_ANALYSIS_BRIEF.md` should be used as the current aggregate reference, while the raw Excel file should remain outside the repository unless anonymised.
+The survey and validation documents should be used before writing the market evidence section. The existing 60 survey responses can support problem discovery and early segmentation, but they should not be presented as conclusive market proof unless the sampling method justifies that level of claim. `SURVEY_ANALYSIS_BRIEF.md` should be used as the current aggregate reference, and `survey_analysis/` should be used for the detailed report, visualisations, and summary tables. The raw Excel file should remain outside the repository unless anonymised.
 
 The pitch narrative should be written last. A strong pitch should compress the business plan into a clear story, not replace the analytical work behind it.
 

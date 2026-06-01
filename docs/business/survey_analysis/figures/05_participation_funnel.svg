@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="660" viewBox="0 0 1180 660">
+<rect width="100%" height="100%" fill="#FFFFFF"/>
+<text x="36" y="44" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="760" fill="#1F2933" text-anchor="start">Participation Preference Funnel</text>
+<text x="36" y="70" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748B" text-anchor="start">Multi-select participation roles reveal a broad reader base and narrower contributor base</text>
+<path d="M 230.0 125 L 1050.0 125 L 1020.0 183 L 260.0 183 Z" fill="#2E5E88" opacity="0.9"/>
+<text x="640" y="161" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="800" fill="white" text-anchor="middle">Browser: read content, rarely post: 40 (66.7%)</text>
+<path d="M 281.2 230 L 998.8 230 L 968.8 288 L 311.2 288 Z" fill="#2F8F83" opacity="0.9"/>
+<text x="640" y="266" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="800" fill="white" text-anchor="middle">Question asker: post academic problems: 35 (58.3%)</text>
+<path d="M 486.2 335 L 793.8 335 L 763.8 393 L 516.2 393 Z" fill="#D88A3D" opacity="0.9"/>
+<text x="640" y="371" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="800" fill="white" text-anchor="middle">Commenter: discuss and supplement experience: 15 (25.0%)</text>
+<path d="M 558.0 440 L 722.0 440 L 692.0 498 L 588.0 498 Z" fill="#7B5AA6" opacity="0.9"/>
+<text x="640" y="476" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="800" fill="white" text-anchor="middle">Answerer: answer others questions: 8 (13.3%)</text>
+<text x="42" y="575" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" text-anchor="start">EDA note: because this was multi-select, roles are not mutually exclusive. The shape is useful for reading participation</text>
+<text x="42" y="593" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" text-anchor="start">tendency, not for modelling conversion.</text>
+</svg>

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="610" viewBox="0 0 1180 610">
+<rect width="100%" height="100%" fill="#FFFFFF"/>
+<text x="36" y="44" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="760" fill="#1F2933" text-anchor="start">Key Exploratory Indicators</text>
+<text x="36" y="70" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748B" text-anchor="start">Selected aggregate signals from the 60-response survey</text>
+<text x="42" y="120" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">Help-seeking at least occasionally</text>
+<line x1="445" y1="115" x2="985" y2="115" stroke="#E3E8EF" stroke-width="8" stroke-linecap="round"/>
+<line x1="445" y1="115" x2="940.2" y2="115" stroke="#2E5E88" stroke-width="8" stroke-linecap="round"/>
+<circle cx="940.2" cy="115" r="10" fill="#2E5E88"/>
+<text x="1010" y="120" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#2E5E88" text-anchor="start">55 / 60 (91.7%)</text>
+<text x="42" y="182" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">AI as most common solution method</text>
+<line x1="445" y1="177" x2="985" y2="177" stroke="#E3E8EF" stroke-width="8" stroke-linecap="round"/>
+<line x1="445" y1="177" x2="940.2" y2="177" stroke="#B74E5B" stroke-width="8" stroke-linecap="round"/>
+<circle cx="940.2" cy="177" r="10" fill="#B74E5B"/>
+<text x="1010" y="182" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#B74E5B" text-anchor="start">55 / 60 (91.7%)</text>
+<text x="42" y="244" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">Information scarcity at least sometimes</text>
+<line x1="445" y1="239" x2="985" y2="239" stroke="#E3E8EF" stroke-width="8" stroke-linecap="round"/>
+<line x1="445" y1="239" x2="958.0" y2="239" stroke="#2F8F83" stroke-width="8" stroke-linecap="round"/>
+<circle cx="958.0" cy="239" r="10" fill="#2F8F83"/>
+<text x="1010" y="244" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#2F8F83" text-anchor="start">57 / 60 (95.0%)</text>
+<text x="42" y="306" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">Centralised information seen as meaningful</text>
+<line x1="445" y1="301" x2="985" y2="301" stroke="#E3E8EF" stroke-width="8" stroke-linecap="round"/>
+<line x1="445" y1="301" x2="940.2" y2="301" stroke="#4C8C55" stroke-width="8" stroke-linecap="round"/>
+<circle cx="940.2" cy="301" r="10" fill="#4C8C55"/>
+<text x="1010" y="306" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#4C8C55" text-anchor="start">55 / 60 (91.7%)</text>
+<text x="42" y="368" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">Has considered or tried finding a study buddy</text>
+<line x1="445" y1="363" x2="985" y2="363" stroke="#E3E8EF" stroke-width="8" stroke-linecap="round"/>
+<line x1="445" y1="363" x2="886.2" y2="363" stroke="#D88A3D" stroke-width="8" stroke-linecap="round"/>
+<circle cx="886.2" cy="363" r="10" fill="#D88A3D"/>
+<text x="1010" y="368" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#D88A3D" text-anchor="start">49 / 60 (81.7%)</text>
+<text x="42" y="430" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">Prefers anonymous questioning</text>
+<line x1="445" y1="425" x2="985" y2="425" stroke="#E3E8EF" stroke-width="8" stroke-linecap="round"/>
+<line x1="445" y1="425" x2="778.2" y2="425" stroke="#7B5AA6" stroke-width="8" stroke-linecap="round"/>
+<circle cx="778.2" cy="425" r="10" fill="#7B5AA6"/>
+<text x="1010" y="430" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#7B5AA6" text-anchor="start">37 / 60 (61.7%)</text>
+<text x="42" y="492" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#1F2933" text-anchor="start">Browses content as a preferred participation mode</text>
+<line x1="445" y1="487" x2="985" y2="487" stroke="#E3E8EF" stroke-width="8" stroke-linecap="round"/>
+<line x1="445" y1="487" x2="805.2" y2="487" stroke="#5F6C7B" stroke-width="8" stroke-linecap="round"/>
+<circle cx="805.2" cy="487" r="10" fill="#5F6C7B"/>
+<text x="1010" y="492" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#5F6C7B" text-anchor="start">40 / 60 (66.7%)</text>
+<text x="42" y="570" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748B" text-anchor="start">Note: indicators are descriptive early signals, not population estimates.</text>
+</svg>

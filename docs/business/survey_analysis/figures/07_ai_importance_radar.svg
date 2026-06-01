@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="760" viewBox="0 0 980 760">
+<rect width="100%" height="100%" fill="#FFFFFF"/>
+<text x="36" y="44" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="760" fill="#1F2933" text-anchor="start">AI-Tool Evaluation Radar</text>
+<text x="36" y="70" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748B" text-anchor="start">Among AI-tool users, positive ratings by evaluation dimension</text>
+<polygon points="500.0,349.0 539.8,372.0 539.8,418.0 500.0,441.0 460.2,418.0 460.2,372.0" fill="none" stroke="#E3E8EF" stroke-width="1"/>
+<text x="506" y="353.0" font-family="Inter, Arial, sans-serif" font-size="10" font-weight="400" fill="#64748B" text-anchor="start">20%</text>
+<polygon points="500.0,303.0 579.7,349.0 579.7,441.0 500.0,487.0 420.3,441.0 420.3,349.0" fill="none" stroke="#E3E8EF" stroke-width="1"/>
+<text x="506" y="307.0" font-family="Inter, Arial, sans-serif" font-size="10" font-weight="400" fill="#64748B" text-anchor="start">40%</text>
+<polygon points="500.0,257.0 619.5,326.0 619.5,464.0 500.0,533.0 380.5,464.0 380.5,326.0" fill="none" stroke="#E3E8EF" stroke-width="1"/>
+<text x="506" y="261.0" font-family="Inter, Arial, sans-serif" font-size="10" font-weight="400" fill="#64748B" text-anchor="start">60%</text>
+<polygon points="500.0,211.0 659.3,303.0 659.3,487.0 500.0,579.0 340.7,487.0 340.7,303.0" fill="none" stroke="#E3E8EF" stroke-width="1"/>
+<text x="506" y="215.0" font-family="Inter, Arial, sans-serif" font-size="10" font-weight="400" fill="#64748B" text-anchor="start">80%</text>
+<polygon points="500.0,165.0 699.2,280.0 699.2,510.0 500.0,625.0 300.8,510.0 300.8,280.0" fill="none" stroke="#E3E8EF" stroke-width="1"/>
+<text x="506" y="169.0" font-family="Inter, Arial, sans-serif" font-size="10" font-weight="400" fill="#64748B" text-anchor="start">100%</text>
+<line x1="500" y1="395" x2="500.0" y2="165.0" stroke="#EDF1F5"/>
+<text x="500.0" y="91.0" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="650" fill="#1F2933" text-anchor="middle">Answer quality</text>
+<text x="500.0" y="203.0" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#2E5E88" text-anchor="middle">80%</text>
+<line x1="500" y1="395" x2="699.2" y2="280.0" stroke="#EDF1F5"/>
+<text x="763.2717227504693" y="243.0" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="650" fill="#1F2933" text-anchor="middle">Timeliness</text>
+<text x="681.0599311692126" y="282.46500000000003" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#2E5E88" text-anchor="middle">91%</text>
+<line x1="500" y1="395" x2="699.2" y2="510.0" stroke="#EDF1F5"/>
+<text x="763.2717227504694" y="547.0" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="650" fill="#1F2933" text-anchor="middle">Personalisation</text>
+<text x="666.5193646396718" y="483.14" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#2E5E88" text-anchor="middle">84%</text>
+<line x1="500" y1="395" x2="500.0" y2="625.0" stroke="#EDF1F5"/>
+<text x="500.0" y="699.0" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="650" fill="#1F2933" text-anchor="middle">Privacy</text>
+<text x="500.0" y="499.93" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#2E5E88" text-anchor="middle">49%</text>
+<line x1="500" y1="395" x2="300.8" y2="510.0" stroke="#EDF1F5"/>
+<text x="236.72827724953072" y="547.0000000000001" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="650" fill="#1F2933" text-anchor="middle">Convenience</text>
+<text x="333.48063536032817" y="483.1400000000001" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#2E5E88" text-anchor="middle">84%</text>
+<line x1="500" y1="395" x2="300.8" y2="280.0" stroke="#EDF1F5"/>
+<text x="236.72827724953066" y="242.99999999999997" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="650" fill="#1F2933" text-anchor="middle">Language fit</text>
+<text x="362.3625825765392" y="307.53499999999997" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#2E5E88" text-anchor="middle">69%</text>
+<polygon points="500.0,211.0 681.1,290.5 666.5,491.1 500.0,507.9 333.5,491.1 362.4,315.5" fill="#2E5E88" opacity="0.22" stroke="#2E5E88" stroke-width="3"/>
+<text x="42" y="690" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748B" text-anchor="start">Positive means somewhat or extremely important. Denominator varies by completed AI-user branch.</text>
+</svg>
