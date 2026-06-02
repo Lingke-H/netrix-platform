@@ -2,7 +2,7 @@
 
 This guide explains how the Biz team should use the existing approximately 60 survey responses in the NeTrix business plan. The main principle is simple: the survey is valuable as early discovery evidence, but it should not be presented as definitive proof of whole-population demand unless the sampling method supports that claim.
 
-For the current aggregate findings from the received workbook, see `SURVEY_ANALYSIS_BRIEF.md`. The raw Excel file contains respondent names and email addresses and should not be committed to the repository unless an anonymised copy is created.
+For the current aggregate findings from the received workbook, see `survey-analysis-brief.md`. The raw Excel file contains respondent names and email addresses and should not be committed to the repository unless an anonymised copy is created.
 
 ## 1. Recommended Evidence Position
 

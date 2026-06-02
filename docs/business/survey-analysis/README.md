@@ -6,8 +6,8 @@ This folder records the anonymised aggregate analysis of the current 60-response
 
 | Path | Purpose |
 | --- | --- |
-| `SURVEY_ANALYSIS_REPORT.md` | Exploratory data analysis report for the 60-response survey. |
-| `METHODOLOGY.md` | Data handling, cleaning, statistical-inference position, and privacy notes. |
+| `survey-analysis-report.md` | Exploratory data analysis report for the 60-response survey. |
+| `methodology.md` | Data handling, cleaning, statistical-inference position, and privacy notes. |
 | `figures/` | SVG visualisations generated from aggregate survey results. |
 | `tables/` | CSV summary tables with counts, percentages, and selected illustrative intervals. |
 

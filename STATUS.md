@@ -12,7 +12,7 @@ The repository has been reset into a direction-first structure. Earlier web scaf
 
 ## Decision Baseline
 
-The current baseline is defined by three linked documents. `SPEC.md` is the operational source of truth for product and engineering decisions. `docs/strategy/DIRECTION_MEMO.md` is the strategic narrative baseline for business-plan and MVP planning. `AGENTS.md` defines how AI-assisted contributors should work inside the repository.
+The current baseline is defined by three linked documents. `SPEC.md` is the operational source of truth for product and engineering decisions. `docs/strategy/direction-memo.md` is the strategic narrative baseline for business-plan and MVP planning. `AGENTS.md` defines how AI-assisted contributors should work inside the repository.
 
 The core validation loop is:
 
@@ -28,7 +28,7 @@ Business and technical work should now move from broad ideation into structured 
 | --- | --- | --- |
 | Business planning | Biz guidance folder has been initiated, including BP structure, CVP, USP, revenue, survey analysis, validation, and pitch guidance. | First full business-plan draft based on the guidance folder. |
 | MVP planning | Chinese Dev operating documents have been added under `docs/dev/`, with the first MVP stack locked as Next.js App Router, TypeScript, Tailwind CSS, Supabase Auth/Postgres, Drizzle, server-side LLM access, and `apps/web`. | Create the web MVP scaffold and begin the first layer-split development sprint. |
-| User validation | The 60-response survey has been analysed at aggregate level in `docs/business/survey_analysis/`; results remain exploratory early evidence rather than conclusive proof. | Targeted interviews with Math, CS, and EEE students. |
+| User validation | The 60-response survey has been analysed at aggregate level in `docs/business/survey-analysis/`; results remain exploratory early evidence rather than conclusive proof. | Targeted interviews with Math, CS, and EEE students. |
 | Content seeding | Post types are defined, but initial topics and seed content have not yet been selected. | First batch of Q&A, Resource, and Experience Sharing seed topics. |
 | Recommendation logic | The first recommendation approach is defined as rule-based candidate generation and transparent scoring, followed by LLM-generated explanation through a server-side wrapper. | Implement the initial recommendation service, prompt schema, and demo data. |
 

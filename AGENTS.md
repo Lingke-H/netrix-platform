@@ -12,7 +12,7 @@ Every task should begin by reading the repository canon in the following order:
 | --- | --- |
 | `SPEC.md` | Defines the current product direction, MVP boundaries, AI role, and engineering constraints. |
 | `STATUS.md` | Records the current operating state, open workstreams, and near-term execution priorities. |
-| `docs/strategy/DIRECTION_MEMO.md` | Provides the strategic narrative used by both business-plan and MVP planning work. |
+| `docs/strategy/direction-memo.md` | Provides the strategic narrative used by both business-plan and MVP planning work. |
 
 Implementation or documentation changes must not contradict `SPEC.md`. If a task reveals that the specification no longer reflects the project owner's intent, update `SPEC.md` first and then propagate the change into other files.
 

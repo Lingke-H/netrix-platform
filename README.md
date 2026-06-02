@@ -6,7 +6,7 @@ NeTrix 是一个面向 UNNC 学生的 AI 辅助学术连接网络。它希望让
 
 ## 战略基线
 
-当前战略方向由 [docs/strategy/DIRECTION_MEMO.md](docs/strategy/DIRECTION_MEMO.md) 定义。简而言之，NeTrix 将从 UNNC 的 Math、Computer Science 和 EEE 学生切入，并验证以下产品循环：
+当前战略方向由 [docs/strategy/direction-memo.md](docs/strategy/direction-memo.md) 定义。简而言之，NeTrix 将从 UNNC 的 Math、Computer Science 和 EEE 学生切入，并验证以下产品循环：
 
 ```text
 学术帖子 -> 学术档案 -> AI 辅助推荐 -> 学术连接
@@ -23,7 +23,7 @@ NeTrix 是一个面向 UNNC 学生的 AI 辅助学术连接网络。它希望让
 | [AGENTS.md](AGENTS.md) | Codex 和其他 AI 辅助贡献者的协作协议。 |
 | [SPEC.md](SPEC.md) | 产品与工程的权威规范。产品方向发生变化时，必须先更新该文件，再开始实施。 |
 | [STATUS.md](STATUS.md) | 当前项目状态、开放工作流和近期执行顺序。 |
-| [docs/strategy/DIRECTION_MEMO.md](docs/strategy/DIRECTION_MEMO.md) | 用于商业计划撰写和 MVP 规划的战略方向备忘录。 |
+| [docs/strategy/direction-memo.md](docs/strategy/direction-memo.md) | 用于商业计划撰写和 MVP 规划的战略方向备忘录。 |
 | [docs/business/](docs/business) | 商业规划指导，覆盖商业计划结构、CVP、USP、收入逻辑、问卷分析、验证计划和路演叙事。 |
 | [docs/dev/](docs/dev) | 中文开发操作手册，覆盖已锁定的 MVP 技术栈、架构、契约、协作流程、数据、AI、安全和交付质量。 |
 

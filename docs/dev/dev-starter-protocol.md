@@ -26,7 +26,7 @@
 
 正式写代码前，三位成员应完成以下动作：
 
-1. 阅读 `SPEC.md`、`docs/strategy/DIRECTION_MEMO.md`、`docs/dev/README.md`。
+1. 阅读 `SPEC.md`、`docs/strategy/direction-memo.md`、`docs/dev/README.md`。
 2. 各自阅读与自己角色相关的开发文件。
 3. 确认本地工作区状态，避免覆盖其他人未提交变更。
 4. 从 `main` 建立个人分支，命名为 `<github-login>/<short-task>`。

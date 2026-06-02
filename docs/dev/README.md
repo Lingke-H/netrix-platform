@@ -6,7 +6,7 @@
 
 ## 1. 权威性与适用范围
 
-`SPEC.md` 仍然是产品与工程范围的最高约束。`docs/strategy/DIRECTION_MEMO.md` 是商业组与开发组共用的战略源头。`docs/dev` 不重新定义 NeTrix，而是说明如何实现当前 MVP。
+`SPEC.md` 仍然是产品与工程范围的最高约束。`docs/strategy/direction-memo.md` 是商业组与开发组共用的战略源头。`docs/dev` 不重新定义 NeTrix，而是说明如何实现当前 MVP。
 
 当前开发基线已经锁定：
 
@@ -26,23 +26,23 @@ AI：服务端 LLM 封装层，支持提示词版本和结构校验
 
 | 文件 | 主要用途 | 直接读者 |
 | --- | --- | --- |
-| `MVP_ENGINEERING_BRIEF.md` | 定义工程目标、MVP 范围、技术基线和阶段性实施顺序。 | 全体开发者 |
-| `SYSTEM_ARCHITECTURE.md` | 定义运行边界、目录结构、功能模块组织、接口形态和环境配置。 | 全体开发者 |
-| `PRODUCT_FLOW_AND_FRONTEND.md` | 定义核心用户路径、页面结构、组件范式、状态设计和视觉实现原则。 | 前端负责人，其他成员需了解 |
-| `DATA_AI_SECURITY.md` | 定义数据实体、权限矩阵、AI 契约、推荐流程、事件记录和安全约束。 | 后端负责人、AI 与质量负责人，前端需了解 |
-| `DELIVERY_AND_QUALITY.md` | 定义开发节奏、PR 标准、测试策略、开工标准、完成标准和迭代验收。 | 全体开发者 |
-| `DEV_STARTER_PROTOCOL.md` | 定义三人第一轮分工、任务依赖、日常协作方式和第一轮迭代产出。 | 全体开发者 |
-| `CONTRACTS_AND_CONVENTIONS.md` | 定义命名、目录、结构校验、服务端接口、环境变量、提示词版本和界面契约。 | 全体开发者 |
+| `mvp-engineering-brief.md` | 定义工程目标、MVP 范围、技术基线和阶段性实施顺序。 | 全体开发者 |
+| `system-architecture.md` | 定义运行边界、目录结构、功能模块组织、接口形态和环境配置。 | 全体开发者 |
+| `product-flow-and-frontend.md` | 定义核心用户路径、页面结构、组件范式、状态设计和视觉实现原则。 | 前端负责人，其他成员需了解 |
+| `data-ai-security.md` | 定义数据实体、权限矩阵、AI 契约、推荐流程、事件记录和安全约束。 | 后端负责人、AI 与质量负责人，前端需了解 |
+| `delivery-and-quality.md` | 定义开发节奏、PR 标准、测试策略、开工标准、完成标准和迭代验收。 | 全体开发者 |
+| `dev-starter-protocol.md` | 定义三人第一轮分工、任务依赖、日常协作方式和第一轮迭代产出。 | 全体开发者 |
+| `contracts-and-conventions.md` | 定义命名、目录、结构校验、服务端接口、环境变量、提示词版本和界面契约。 | 全体开发者 |
 
-阅读顺序不应随意调整。所有成员应先阅读本文件、`MVP_ENGINEERING_BRIEF.md`、`SYSTEM_ARCHITECTURE.md` 和 `DELIVERY_AND_QUALITY.md`。随后按职责深入对应文件：前端成员重点阅读 `PRODUCT_FLOW_AND_FRONTEND.md`，后端和数据成员重点阅读 `DATA_AI_SECURITY.md`，AI 与质量集成成员需要同时阅读两者。
+阅读顺序不应随意调整。所有成员应先阅读本文件、`mvp-engineering-brief.md`、`system-architecture.md` 和 `delivery-and-quality.md`。随后按职责深入对应文件：前端成员重点阅读 `product-flow-and-frontend.md`，后端和数据成员重点阅读 `data-ai-security.md`，AI 与质量集成成员需要同时阅读两者。
 
 ## 3. 立即开工协议
 
 开发组开工前不再召开大范围方向会议。第一轮开发直接按本文件夹执行：
 
 1. 从 `main` 拉取最新代码，确认工作区没有未理解的本地变更。
-2. 按 `DEV_STARTER_PROTOCOL.md` 分配前端、后端数据、AI 与质量三类职责。
-3. 按 `CONTRACTS_AND_CONVENTIONS.md` 建立 `apps/web` 脚手架、包管理脚本、环境变量占位文件、Drizzle/Supabase 基线和基础功能目录。
+2. 按 `dev-starter-protocol.md` 分配前端、后端数据、AI 与质量三类职责。
+3. 按 `contracts-and-conventions.md` 建立 `apps/web` 脚手架、包管理脚本、环境变量占位文件、Drizzle/Supabase 基线和基础功能目录。
 4. 每个成员只在自己负责的职责层开分支；涉及数据结构、页面接口、AI 输出结构的变化，必须在 PR 描述中标明影响范围。
 5. 每个 PR 必须说明验证命令、未验证原因或剩余风险。不能把无法运行的界面、假按钮或静态样稿当作功能完成。
 

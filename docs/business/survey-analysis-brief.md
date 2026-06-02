@@ -110,7 +110,7 @@ The business plan should not claim that the survey proves population-level deman
 
 ## 9. Dedicated Analysis Outputs
 
-A dedicated analysis folder now records the current descriptive analysis outputs: `docs/business/survey_analysis/`. It contains an EDA report, methodology note, SVG visualisations, and aggregate CSV tables. These outputs provide survey evidence that the Biz team can interpret and integrate into the business plan.
+A dedicated analysis folder now records the current descriptive analysis outputs: `docs/business/survey-analysis/`. It contains an EDA report, methodology note, SVG visualisations, and aggregate CSV tables. These outputs provide survey evidence that the Biz team can interpret and integrate into the business plan.
 
 If the team later needs a respondent-level analysis workbook, it should be created from an anonymised version of the dataset. That workbook should include cleaned major categories, first-wedge tagging, count and percentage tables, multi-select response coding, and charts for the most important business-plan findings, without preserving names, emails, or other personally identifiable information.
 

@@ -2,7 +2,7 @@
 
 This guide defines the recommended structure and writing logic for the NeTrix business plan. It is intended to help the Biz team produce a coherent, evidence-conscious document rather than a collection of disconnected sections.
 
-The business plan should be written from the strategic baseline in `docs/strategy/DIRECTION_MEMO.md`. The central argument is that NeTrix is not merely a resource-sharing website. It is an AI-assisted academic connection network that helps students discover academic knowledge, experience, and relevant peers inside a verified UNNC context.
+The business plan should be written from the strategic baseline in `docs/strategy/direction-memo.md`. The central argument is that NeTrix is not merely a resource-sharing website. It is an AI-assisted academic connection network that helps students discover academic knowledge, experience, and relevant peers inside a verified UNNC context.
 
 ## 1. Recommended Business Plan Structure
 
