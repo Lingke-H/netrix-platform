@@ -42,13 +42,35 @@ AI：服务端 LLM 封装层，支持提示词版本和结构校验
 
 1. 从 `main` 拉取最新代码，确认工作区没有未理解的本地变更。
 2. 按 `dev-starter-protocol.md` 分配前端、后端数据、AI 与质量三类职责。
-3. 按 `contracts-and-conventions.md` 建立 `apps/web` 脚手架、包管理脚本、环境变量占位文件、Drizzle/Supabase 基线和基础功能目录。
+3. 以仓库中已经存在的 `apps/web` scaffold baseline 为共同起点，继续沿 `contracts-and-conventions.md` 推进共享契约、页面实现、服务端逻辑与 AI 相关能力。
 4. 每个成员只在自己负责的职责层开分支；涉及数据结构、页面接口、AI 输出结构的变化，必须在 PR 描述中标明影响范围。
 5. 每个 PR 必须说明验证命令、未验证原因或剩余风险。不能把无法运行的界面、假按钮或静态样稿当作功能完成。
 
-第一轮目标不是做完一个漂亮平台，而是跑通一条真实、可重复、可演示的核心路径：校园邮箱验证、档案引导、三类帖子、AI 档案与昵称、推荐档案、连接请求、接受连接后的消息功能。
+第一轮目标不是做完一个漂亮平台，而是基于现有基线跑通一条真实、可重复、可演示的核心路径：校园邮箱验证、档案引导、三类帖子、AI 档案与昵称、推荐档案、连接请求、接受连接后的消息功能。
 
-## 4. 职责地图
+## 4. 当前脚手架状态
+
+仓库当前已经完成以下脚手架准备：
+
+- 根目录包管理与工作区配置：`package.json`、`pnpm-workspace.yaml`、`.env.example`。
+- `apps/web` 应用骨架：Next.js App Router、Tailwind、ESLint、TypeScript、Vitest、Playwright、Drizzle 配置。
+- 路由骨架：`/auth`、`/onboarding`、`/feed`、`/posts/new`、`/posts/[id]`、`/library`、`/me`、`/profiles/[id]`、`/recommendations`、`/connections`、`/messages/[threadId]`。
+- 功能契约骨架：`src/features/*/schemas.ts`、`types.ts`，以及 `src/server/*` 下的数据库、AI、认证、权限和事件记录入口。
+
+这意味着三位开发者现在不需要再讨论“项目目录该怎么起”或“技术栈该怎么选”，而是可以直接从 `main` 拉取基线并各自开分支实现职责范围内的内容。
+
+## 5. 本地启动
+
+最小本地准备步骤如下：
+
+```bash
+corepack pnpm install
+cp .env.example apps/web/.env.local
+corepack pnpm dev
+```
+
+环境变量值在未接入真实服务前可以先保留占位，但涉及 Supabase、数据库和 OpenAI 的功能不会在空值下工作。更具体的应用入口说明见 `apps/web/README.md`。
+## 6. 职责地图
 
 三人分工采用职责层拆分。这种方式能减少初期代码冲突，并让架构、数据和前端体验并行推进。
 
@@ -60,7 +82,7 @@ AI：服务端 LLM 封装层，支持提示词版本和结构校验
 
 职责边界不是知识隔离。任何成员都可以参与评审其他职责层，但实现时应避免在一个 PR 中同时大幅修改界面、数据结构、AI 提示词和权限策略。
 
-## 5. 完成标准
+## 7. 完成标准
 
 本文件夹完成后，开发组应能回答以下问题：代码放在哪里，使用什么技术栈，如何建立本地环境，核心数据对象叫什么，权限如何判断，AI 可以读取什么，推荐如何生成，页面如何组织，PR 如何提交，哪些检查必须运行，什么状态才算完成。
 

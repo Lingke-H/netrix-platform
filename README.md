@@ -2,7 +2,7 @@
 
 NeTrix 是一个面向 UNNC 学生的 AI 辅助学术连接网络。它希望让学术问题、学习资源、学习经验、个人学术身份和同伴连接在校园内更高效地流动。
 
-本仓库目前是一个以方向确认为核心的项目工作区。在新的技术脚手架重新引入之前，仓库只保留用于对齐产品战略、商业规划和 MVP 实施的必要文档。早期原型中的旧假设已经移除，后续工作应从当前产品主线出发，而不是沿用已经过时的界面或架构实验。
+本仓库已经进入第一版可执行基线阶段。除战略、商业和开发文档外，仓库现已包含位于 `apps/web` 的网页 MVP scaffold baseline，用于支持三位开发者在统一契约之上并行推进前端、后端与 AI 相关开发。早期原型中的旧假设已经移除，后续工作应从当前产品主线和现有基线出发，而不是沿用已经过时的界面或架构实验。
 
 ## 战略基线
 
@@ -39,8 +39,31 @@ NeTrix 是一个面向 UNNC 学生的 AI 辅助学术连接网络。它希望让
 
 初始用户切入点是 Math、Computer Science 和 EEE 学生。FAM、IBE 以及更广泛的 UNNC 学生群体，是第一轮切入点获得更强验证之后的扩展机会。
 
+## 开发基线现状
+
+当前代码基线已经包含以下内容：
+
+- `apps/web`：Next.js App Router + TypeScript + Tailwind CSS 的应用骨架。
+- `src/app`：认证、引导、信息流、发帖、档案、推荐、连接和消息的路由骨架。
+- `src/features`：按功能领域组织的 DTO、Zod 校验结构和类型占位。
+- `src/server`：认证、数据库、权限、AI、事件记录的服务端边界骨架。
+- `supabase/`：迁移目录和种子数据入口。
+
+当前可用的基线验证命令为：
+
+```bash
+corepack pnpm install
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm test
+corepack pnpm build
+corepack pnpm test:e2e
+```
+
+如需本地运行前端，请先参考 `apps/web/README.md` 完成环境变量准备，再执行 `corepack pnpm dev`。
+
 ## 下一步工作流
 
 `docs/business/` 已经提供第一套商业计划写作体系，`docs/dev/` 则将同一产品主线转化为实施操作手册。第一版 MVP 的技术基线已锁定为：`apps/web`、Next.js App Router、TypeScript、Tailwind CSS、Supabase Auth/Postgres、Drizzle、服务端 LLM 调用，以及 `corepack pnpm`。
 
-仓库的下一个主要增量应是实际的网页 MVP 脚手架。该脚手架应基于开发手册构建，而不是重新展开架构讨论。
+仓库的下一步主要工作不再是重新搭建脚手架，而是从现有基线出发分层推进：前端负责人接产品流程与页面组件，后端负责人接认证、数据和权限，AI 负责人接提示词、推荐解释、评分与质量验证。所有实现都应基于现有开发手册和共享契约继续展开。

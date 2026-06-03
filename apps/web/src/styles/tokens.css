@@ -1,0 +1,16 @@
+:root {
+  --color-ink: #18211d;
+  --color-muted: #5e6d66;
+  --color-line: rgba(24, 33, 29, 0.12);
+  --color-surface: rgba(255, 255, 255, 0.92);
+  --color-surface-strong: #ffffff;
+  --color-background: #f4f0e7;
+  --color-background-alt: #e5efe3;
+  --color-accent: #1d6b57;
+  --color-accent-soft: rgba(29, 107, 87, 0.12);
+  --color-warning: #b56a1e;
+  --color-info: #3d5a86;
+  --shadow-soft: 0 18px 45px rgba(35, 44, 37, 0.08);
+  --radius-card: 20px;
+  --radius-pill: 999px;
+}
