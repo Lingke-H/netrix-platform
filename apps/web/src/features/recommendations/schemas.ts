@@ -3,15 +3,15 @@ import { z } from "zod";
 import { majorSchema, studyYearSchema } from "@/features/profile/schemas";
 
 export const recommendationStatusSchema = z.enum([
-  "generated",
-  "viewed",
+  "active",
   "dismissed",
   "requested",
-  "connected",
+  "expired",
 ]);
 
 export const recommendationSchema = z.object({
   recommendationId: z.string().uuid(),
+  generatedByJobId: z.string().uuid().nullable(),
   recommendedUserId: z.string().uuid(),
   nickname: z.string().trim().min(2).max(40),
   major: majorSchema,

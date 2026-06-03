@@ -3,8 +3,8 @@ import type {
   AcademicProfile,
   AcademicProfileFormInput,
   ProfileCompletionStatus,
-  ProfileVisibility,
   PublicAcademicProfile,
+  Visibility,
 } from "./schemas";
 
 export type ProfileFormMode = "create" | "edit";
@@ -13,7 +13,7 @@ export type ProfileRouteState = {
   profile: AcademicProfile | null;
   portrait: AcademicPortrait | null;
   completionStatus: ProfileCompletionStatus;
-  visibility: ProfileVisibility;
+  visibility: Visibility;
 };
 
 export type ProfileDraftPayload = AcademicProfileFormInput;

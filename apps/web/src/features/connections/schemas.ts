@@ -11,10 +11,10 @@ export const connectionStatusSchema = z.enum(["active", "archived"]);
 
 export const connectionRequestSchema = z.object({
   id: z.string().uuid(),
-  requesterUserId: z.string().uuid(),
-  recipientUserId: z.string().uuid(),
+  requesterId: z.string().uuid(),
+  recipientId: z.string().uuid(),
   recommendationId: z.string().uuid().nullable(),
-  messagePreview: z.string().trim().min(1).max(240).nullable(),
+  message: z.string().trim().min(1).max(240).nullable(),
   status: connectionRequestStatusSchema,
   createdAt: z.string().datetime(),
   respondedAt: z.string().datetime().nullable(),
@@ -26,7 +26,7 @@ export const connectionSchema = z.object({
   userBId: z.string().uuid(),
   requestId: z.string().uuid(),
   status: connectionStatusSchema,
-  connectedAt: z.string().datetime(),
+  createdAt: z.string().datetime(),
 });
 
 export const connectionRequestActionSchema = z.object({

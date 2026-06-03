@@ -2,7 +2,7 @@ import type { ResourceItem } from "./schemas";
 
 export type LibraryFilterState = {
   tag: string | null;
-  moduleCode: string | null;
+  module: string | null;
   source: "all" | "resources" | "promoted-posts";
 };
 

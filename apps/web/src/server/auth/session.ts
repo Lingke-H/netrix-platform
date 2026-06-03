@@ -1,6 +1,6 @@
 export type CurrentUserSession = {
   userId: string;
-  campusEmail: string;
+  email: string;
   emailVerified: boolean;
 };
 

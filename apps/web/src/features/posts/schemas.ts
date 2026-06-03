@@ -2,8 +2,9 @@ import { z } from "zod";
 
 import { majorSchema, studyYearSchema } from "@/features/profile/schemas";
 
-export const postTypeSchema = z.enum(["qa", "resource", "experience"]);
-export const postVisibilitySchema = z.enum(["campus", "connections"]);
+export const postTypeSchema = z.enum(["question", "resource", "experience"]);
+export const visibilitySchema = z.enum(["private", "campus", "public"]);
+export const postStatusSchema = z.enum(["draft", "published", "archived"]);
 
 export const postTagSchema = z.string().trim().min(1).max(48);
 
@@ -19,10 +20,11 @@ export const postSchema = z.object({
   author: postAuthorSummarySchema,
   type: postTypeSchema,
   title: z.string().trim().min(4).max(120),
-  content: z.string().trim().min(12).max(4000),
-  moduleCode: z.string().trim().min(1).max(24).nullable(),
+  body: z.string().trim().min(12).max(4000),
+  modules: z.array(z.string().trim().min(1).max(80)).max(8),
   tags: z.array(postTagSchema).max(8),
-  visibility: postVisibilitySchema,
+  visibility: visibilitySchema,
+  status: postStatusSchema,
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -40,7 +42,8 @@ export const postFeedItemSchema = postSchema.extend({
 });
 
 export type PostType = z.infer<typeof postTypeSchema>;
-export type PostVisibility = z.infer<typeof postVisibilitySchema>;
+export type Visibility = z.infer<typeof visibilitySchema>;
+export type PostStatus = z.infer<typeof postStatusSchema>;
 export type PostAuthorSummary = z.infer<typeof postAuthorSummarySchema>;
 export type Post = z.infer<typeof postSchema>;
 export type CreatePostInput = z.infer<typeof createPostInputSchema>;

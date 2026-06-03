@@ -5,7 +5,7 @@ export type PostComposerMode = "create" | "edit";
 export type PostFilterState = {
   type: PostType | "all";
   tag: string | null;
-  moduleCode: string | null;
+  module: string | null;
 };
 
 export type PostComposerDraft = CreatePostInput;

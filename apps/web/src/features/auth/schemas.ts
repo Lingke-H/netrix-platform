@@ -19,7 +19,7 @@ export const authViewStateSchema = z.enum([
 
 export const authSessionSummarySchema = z.object({
   userId: z.string().uuid(),
-  campusEmail: campusEmailSchema,
+  email: campusEmailSchema,
   authState: authViewStateSchema,
 });
 
