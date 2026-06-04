@@ -5,6 +5,7 @@ import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
 import type { Post, PostAuthorSummary } from "@/features/posts/schemas";
 import { getCurrentUserPostDetail } from "@/features/posts/server/service";
+import { getPostAuthorProfileHref } from "@/features/posts/types";
 
 export const dynamic = "force-dynamic";
 
@@ -32,12 +33,14 @@ function formatDate(value: string) {
 }
 
 function AuthorHeading({ author }: { author: PostAuthorSummary }) {
-  if (!author.userId) {
+  const profileHref = getPostAuthorProfileHref(author);
+
+  if (!profileHref) {
     return <h2 className="text-xl font-semibold text-[var(--color-ink)]">{author.nickname}</h2>;
   }
 
   return (
-    <Link href={`/profiles/${author.userId}`} className="text-xl font-semibold text-[var(--color-ink)] hover:text-[var(--color-accent)]">
+    <Link href={profileHref} className="text-xl font-semibold text-[var(--color-ink)] hover:text-[var(--color-accent)]">
       {author.nickname}
     </Link>
   );

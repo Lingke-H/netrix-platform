@@ -1,4 +1,4 @@
-import type { CreatePostInput, Post, PostFeedItem, PostType } from "./schemas";
+import type { CreatePostInput, Post, PostAuthorSummary, PostFeedItem, PostType } from "./schemas";
 
 export type PostComposerMode = "create" | "edit";
 
@@ -18,3 +18,7 @@ export type PostDetailData = {
   post: Post;
   relatedPostIds: string[];
 };
+
+export function getPostAuthorProfileHref(author: PostAuthorSummary): `/profiles/${string}` | null {
+  return author.userId ? `/profiles/${author.userId}` : null;
+}

@@ -4,6 +4,7 @@ import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
 import type { PostAuthorSummary, PostFeedItem } from "@/features/posts/schemas";
 import { getCurrentUserCampusFeed } from "@/features/posts/server/service";
+import { getPostAuthorProfileHref } from "@/features/posts/types";
 
 export const dynamic = "force-dynamic";
 
@@ -33,12 +34,14 @@ function FeedEmptyState() {
 }
 
 function AuthorName({ author }: { author: PostAuthorSummary }) {
-  if (!author.userId) {
+  const profileHref = getPostAuthorProfileHref(author);
+
+  if (!profileHref) {
     return <span>{author.nickname}</span>;
   }
 
   return (
-    <Link href={`/profiles/${author.userId}`} className="font-semibold text-[var(--color-ink)] hover:text-[var(--color-accent)]">
+    <Link href={profileHref} className="font-semibold text-[var(--color-ink)] hover:text-[var(--color-accent)]">
       {author.nickname}
     </Link>
   );

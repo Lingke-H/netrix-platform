@@ -11,6 +11,7 @@ import {
   parseCreatePostInput,
   splitPostFormList,
 } from "@/features/posts/server/service";
+import { getPostAuthorProfileHref } from "@/features/posts/types";
 
 const validInput = {
   body: "This is a concrete academic question about COMP1048 debugging patterns.",
@@ -129,6 +130,16 @@ describe("campus feed service", () => {
       userId: null,
       year: null,
     });
+  });
+
+  it("does not build profile links for private post authors", () => {
+    const privateAuthor = buildPostAuthorSummary({
+      ...feedRow.author,
+      profileVisibility: "private",
+    });
+
+    expect(getPostAuthorProfileHref(feedRow.author)).toBe(`/profiles/${feedRow.author.userId}`);
+    expect(getPostAuthorProfileHref(privateAuthor)).toBeNull();
   });
 
   it("clamps feed page size and reports whether another page exists", () => {
