@@ -3,7 +3,9 @@ import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { getAcademicProfileForUser } from "@/features/profile/server/service";
 import {
   recommendationExplanationInputSchema,
+  recommendationExplanationOutputSchema,
   type RecommendationExplanationInput,
+  type RecommendationExplanationOutput,
 } from "@/server/ai/schemas/recommendation-explanation";
 import {
   buildRecommendationExplanationPromptMessages,
@@ -65,6 +67,17 @@ export type RecommendationExplanationPromptPayload = {
   messages: RecommendationExplanationPromptMessage[];
   promptVersion: typeof recommendationExplanationPromptVersion;
 };
+
+export type RecommendationExplanationOutputParseResult =
+  | {
+      ok: true;
+      output: RecommendationExplanationOutput;
+    }
+  | {
+      code: "INVALID_RECOMMENDATION_EXPLANATION_OUTPUT";
+      issues: string[];
+      ok: false;
+    };
 
 const recommendationScoringWeights = {
   collaborationPreferenceOverlap: 1,
@@ -250,6 +263,29 @@ export function buildRecommendationExplanationPromptPayload(
   return {
     messages: buildRecommendationExplanationPromptMessages(input),
     promptVersion: recommendationExplanationPromptVersion,
+  };
+}
+
+export function parseRecommendationExplanationOutput(
+  output: unknown,
+): RecommendationExplanationOutputParseResult {
+  const parsedOutput = recommendationExplanationOutputSchema.safeParse(output);
+
+  if (!parsedOutput.success) {
+    return {
+      code: "INVALID_RECOMMENDATION_EXPLANATION_OUTPUT",
+      issues: parsedOutput.error.issues.map((issue) => {
+        const path = issue.path.length > 0 ? issue.path.join(".") : "root";
+
+        return `${path}: ${issue.message}`;
+      }),
+      ok: false,
+    };
+  }
+
+  return {
+    ok: true,
+    output: parsedOutput.data,
   };
 }
 

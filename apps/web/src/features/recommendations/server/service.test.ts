@@ -32,6 +32,7 @@ import {
   getCurrentUserScoredRecommendationCandidates,
   getRecommendationCandidateLimit,
   listCampusVisibleRecommendationCandidates,
+  parseRecommendationExplanationOutput,
   scoreRecommendationCandidate,
   scoreRecommendationCandidates,
   type RecommendationCandidateProfileRow,
@@ -309,6 +310,44 @@ describe("recommendation read service", () => {
         }),
       ],
       promptVersion: "recommendation-explanation.v1",
+    });
+  });
+
+  it("parses valid recommendation explanation output without calling OpenAI", () => {
+    expect(
+      parseRecommendationExplanationOutput({
+        complementarySignals: ["Candidate can help with TypeScript debugging"],
+        conversationStarter: "Ask whether they have a debugging workflow for COMP1048 projects.",
+        explanationSummary: "  You share COMP1048 and web app interests, with complementary TypeScript support.  ",
+        sharedSignals: ["COMP1048", "web apps"],
+      }),
+    ).toEqual({
+      ok: true,
+      output: {
+        complementarySignals: ["Candidate can help with TypeScript debugging"],
+        conversationStarter: "Ask whether they have a debugging workflow for COMP1048 projects.",
+        explanationSummary: "You share COMP1048 and web app interests, with complementary TypeScript support.",
+        sharedSignals: ["COMP1048", "web apps"],
+      },
+    });
+  });
+
+  it("returns a stable parser error for invalid recommendation explanation output", () => {
+    expect(
+      parseRecommendationExplanationOutput({
+        complementarySignals: ["Candidate can help with TypeScript debugging"],
+        conversationStarter: "",
+        explanationSummary: "",
+        sharedSignals: Array.from({ length: 7 }, (_, index) => `signal-${index}`),
+      }),
+    ).toEqual({
+      code: "INVALID_RECOMMENDATION_EXPLANATION_OUTPUT",
+      issues: expect.arrayContaining([
+        expect.stringContaining("conversationStarter:"),
+        expect.stringContaining("explanationSummary:"),
+        expect.stringContaining("sharedSignals:"),
+      ]),
+      ok: false,
     });
   });
 
