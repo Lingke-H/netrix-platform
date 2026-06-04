@@ -2,12 +2,14 @@ import { and, desc, eq } from "drizzle-orm";
 
 import {
   createPostInputSchema,
+  postSchema,
   postFeedItemSchema,
   type CreatePostInput,
+  type Post,
   type PostFeedItem,
   type PostStatus,
 } from "@/features/posts/schemas";
-import type { FeedData } from "@/features/posts/types";
+import type { FeedData, PostDetailData } from "@/features/posts/types";
 import { requireVerifiedCampusUser } from "@/server/auth/session";
 import { requireCompletedAcademicProfile } from "@/server/auth/onboarding-gate";
 import { createDb, type DbClient } from "@/server/db/client";
@@ -48,6 +50,8 @@ type CampusFeedPostRow = {
     year: "foundation" | "year-1" | "year-2" | "year-3" | "year-4" | "postgraduate";
   };
 };
+
+type CampusPostDetailRow = CampusFeedPostRow;
 
 export type CampusFeedOptions = {
   limit?: number;
@@ -114,6 +118,22 @@ export function buildCampusFeedItem(row: CampusFeedPostRow): PostFeedItem {
   });
 }
 
+export function buildCampusPostDetail(row: CampusPostDetailRow): Post {
+  return postSchema.parse({
+    author: row.author,
+    body: row.body,
+    createdAt: row.createdAt.toISOString(),
+    id: row.id,
+    modules: row.modules,
+    status: row.status,
+    tags: row.tags,
+    title: row.title,
+    type: row.type,
+    updatedAt: row.updatedAt.toISOString(),
+    visibility: row.visibility,
+  });
+}
+
 export function buildCampusFeedData(rows: CampusFeedPostRow[], pageSize: number): FeedData {
   return {
     hasNextPage: rows.length > pageSize,
@@ -121,9 +141,21 @@ export function buildCampusFeedData(rows: CampusFeedPostRow[], pageSize: number)
   };
 }
 
-export async function listCampusFeedPosts(db: DbClient, options: CampusFeedOptions = {}): Promise<FeedData> {
-  const pageSize = getCampusFeedPageSize(options.limit);
-  const rows = await db
+function isPostId(value: string) {
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(
+    value,
+  );
+}
+
+export function buildPostDetailData(row: CampusPostDetailRow): PostDetailData {
+  return {
+    post: buildCampusPostDetail(row),
+    relatedPostIds: [],
+  };
+}
+
+function selectCampusPostRows(db: DbClient) {
+  return db
     .select({
       author: {
         major: academicProfiles.major,
@@ -143,7 +175,12 @@ export async function listCampusFeedPosts(db: DbClient, options: CampusFeedOptio
       visibility: posts.visibility,
     })
     .from(posts)
-    .innerJoin(academicProfiles, eq(posts.authorId, academicProfiles.userId))
+    .innerJoin(academicProfiles, eq(posts.authorId, academicProfiles.userId));
+}
+
+export async function listCampusFeedPosts(db: DbClient, options: CampusFeedOptions = {}): Promise<FeedData> {
+  const pageSize = getCampusFeedPageSize(options.limit);
+  const rows = await selectCampusPostRows(db)
     .where(and(eq(posts.status, "published"), eq(posts.visibility, "campus")))
     .orderBy(desc(posts.createdAt))
     .limit(pageSize + 1);
@@ -156,6 +193,26 @@ export async function listCampusFeedPosts(db: DbClient, options: CampusFeedOptio
     })),
     pageSize,
   );
+}
+
+export async function getCampusPostDetailById(db: DbClient, postId: string): Promise<PostDetailData | null> {
+  if (!isPostId(postId)) {
+    return null;
+  }
+
+  const [row] = await selectCampusPostRows(db)
+    .where(and(eq(posts.id, postId), eq(posts.status, "published"), eq(posts.visibility, "campus")))
+    .limit(1);
+
+  if (!row) {
+    return null;
+  }
+
+  return buildPostDetailData({
+    ...row,
+    status: "published",
+    visibility: "campus",
+  });
 }
 
 export async function createPostForUser(
@@ -206,4 +263,11 @@ export async function getCurrentUserCampusFeed(options: CampusFeedOptions = {}):
   const db = createDb();
 
   return listCampusFeedPosts(db, options);
+}
+
+export async function getCurrentUserPostDetail(postId: string): Promise<PostDetailData | null> {
+  await requireVerifiedCampusUser();
+  const db = createDb();
+
+  return getCampusPostDetailById(db, postId);
 }

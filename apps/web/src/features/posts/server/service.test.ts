@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildCampusFeedData,
   buildCampusFeedItem,
+  buildPostDetailData,
   CreatePostError,
   getCampusFeedPageSize,
   normalizeCreatePostFormData,
@@ -120,6 +121,25 @@ describe("campus feed service", () => {
     expect(buildCampusFeedData([feedRow, feedRow], 1)).toMatchObject({
       hasNextPage: true,
       items: [expect.objectContaining({ id: feedRow.id })],
+    });
+  });
+
+  it("builds post detail DTOs with author academic profile summaries", () => {
+    expect(buildPostDetailData(feedRow)).toEqual({
+      post: {
+        author: feedRow.author,
+        body: feedRow.body,
+        createdAt: "2026-01-02T03:04:05.000Z",
+        id: feedRow.id,
+        modules: feedRow.modules,
+        status: "published",
+        tags: feedRow.tags,
+        title: feedRow.title,
+        type: "question",
+        updatedAt: "2026-01-02T04:05:06.000Z",
+        visibility: "campus",
+      },
+      relatedPostIds: [],
     });
   });
 });
