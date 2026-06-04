@@ -26,6 +26,7 @@ import {
   buildEmptyRecommendationFeedData,
   buildRecommendationCandidateProfile,
   buildRecommendationExplanationInput,
+  buildRecommendationExplanationPromptPayload,
   getCurrentUserRecommendationCandidates,
   getCurrentUserRecommendationFeed,
   getCurrentUserScoredRecommendationCandidates,
@@ -288,6 +289,27 @@ describe("recommendation read service", () => {
         },
       }),
     ).toThrow();
+  });
+
+  it("builds recommendation explanation prompt payloads without calling OpenAI", () => {
+    const scoredCandidate = scoreRecommendationCandidate(
+      viewerScoringProfile,
+      buildRecommendationCandidateProfile(candidateRow),
+    );
+
+    expect(buildRecommendationExplanationPromptPayload(viewerScoringProfile, scoredCandidate)).toEqual({
+      messages: [
+        expect.objectContaining({
+          content: expect.stringContaining("You write concise, explainable academic connection recommendations"),
+          role: "system",
+        }),
+        expect.objectContaining({
+          content: expect.stringContaining("Prompt version: recommendation-explanation.v1"),
+          role: "user",
+        }),
+      ],
+      promptVersion: "recommendation-explanation.v1",
+    });
   });
 
   it("requires a completed academic profile before reading recommendations", async () => {

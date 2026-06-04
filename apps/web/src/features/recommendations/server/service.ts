@@ -6,6 +6,11 @@ import {
   type RecommendationExplanationInput,
 } from "@/server/ai/schemas/recommendation-explanation";
 import {
+  buildRecommendationExplanationPromptMessages,
+  type RecommendationExplanationPromptMessage,
+  recommendationExplanationPromptVersion,
+} from "@/server/ai/prompts/recommendation-explanation.v1";
+import {
   type RecommendationCandidateProfile,
   recommendationCandidateProfileSchema,
 } from "@/features/recommendations/schemas";
@@ -54,6 +59,11 @@ export type ScoredRecommendationCandidate = {
   score: number;
   scoreSummary: RecommendationScoreSummary;
   sharedSignals: string[];
+};
+
+export type RecommendationExplanationPromptPayload = {
+  messages: RecommendationExplanationPromptMessage[];
+  promptVersion: typeof recommendationExplanationPromptVersion;
 };
 
 const recommendationScoringWeights = {
@@ -229,6 +239,18 @@ export function buildRecommendationExplanationInput(
       skills: viewerProfile.skills,
     },
   });
+}
+
+export function buildRecommendationExplanationPromptPayload(
+  viewerProfile: RecommendationScoringProfile,
+  scoredCandidate: ScoredRecommendationCandidate,
+): RecommendationExplanationPromptPayload {
+  const input = buildRecommendationExplanationInput(viewerProfile, scoredCandidate);
+
+  return {
+    messages: buildRecommendationExplanationPromptMessages(input),
+    promptVersion: recommendationExplanationPromptVersion,
+  };
 }
 
 export async function listCampusVisibleRecommendationCandidates(
