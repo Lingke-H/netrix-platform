@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { majorSchema, studyYearSchema, type Visibility } from "@/features/profile/schemas";
+import { majorSchema, profileCompletionStatusSchema, studyYearSchema, type Visibility } from "@/features/profile/schemas";
 
 export const recommendationStatusSchema = z.enum([
   "active",
@@ -68,8 +68,25 @@ export const recommendationActionInputSchema = z.object({
   action: z.enum(["dismiss", "request-connect"]),
 });
 
+export const recommendationCandidateProfileSchema = z.object({
+  collaborationPreference: z.array(z.string().trim().min(1).max(80)).max(8),
+  completionStatus: profileCompletionStatusSchema.extract(["basic_complete", "recommendation_ready"]),
+  helpNeeded: z.array(z.string().trim().min(1).max(80)).max(10),
+  helpOffered: z.array(z.string().trim().min(1).max(80)).max(10),
+  interests: z.array(z.string().trim().min(1).max(80)).max(12),
+  major: majorSchema,
+  modules: z.array(z.string().trim().min(1).max(80)).max(12),
+  nickname: z.string().trim().min(2).max(40),
+  skills: z.array(z.string().trim().min(1).max(80)).max(10),
+  updatedAt: z.string().datetime(),
+  userId: z.string().uuid(),
+  visibility: z.literal("campus"),
+  year: studyYearSchema,
+});
+
 export type RecommendationStatus = z.infer<typeof recommendationStatusSchema>;
 export type RecommendationProfileVisibility = Visibility;
 export type RecommendationProfile = z.infer<typeof recommendationProfileSchema>;
 export type Recommendation = z.infer<typeof recommendationSchema>;
 export type RecommendationActionInput = z.infer<typeof recommendationActionInputSchema>;
+export type RecommendationCandidateProfile = z.infer<typeof recommendationCandidateProfileSchema>;

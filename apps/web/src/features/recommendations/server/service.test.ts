@@ -2,18 +2,65 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { recommendationSchema } from "@/features/recommendations/schemas";
 import { recommendationFeedFixture } from "@/features/recommendations/test-fixtures";
+import type { DbClient } from "@/server/db/client";
 
 const requireCompletedAcademicProfileMock = vi.hoisted(() => vi.fn());
+const createDbMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/server/auth/onboarding-gate", () => ({
   requireCompletedAcademicProfile: requireCompletedAcademicProfileMock,
 }));
 
-import { buildEmptyRecommendationFeedData, getCurrentUserRecommendationFeed } from "@/features/recommendations/server/service";
+vi.mock("@/server/db/client", () => ({
+  createDb: createDbMock,
+}));
+
+import {
+  buildEmptyRecommendationFeedData,
+  buildRecommendationCandidateProfile,
+  getCurrentUserRecommendationCandidates,
+  getCurrentUserRecommendationFeed,
+  getRecommendationCandidateLimit,
+  listCampusVisibleRecommendationCandidates,
+  type RecommendationCandidateProfileRow,
+} from "@/features/recommendations/server/service";
+
+const currentUserId = "33333333-3333-4333-8333-333333333333";
+
+const candidateRow: RecommendationCandidateProfileRow = {
+  collaborationPreference: ["pair study"],
+  completionStatus: "basic_complete",
+  helpNeeded: ["signals"],
+  helpOffered: ["typescript debugging"],
+  interests: ["web apps"],
+  major: "computer-science",
+  modules: ["COMP1048"],
+  nickname: "TypeScript Builder",
+  skills: ["react"],
+  updatedAt: new Date("2026-01-02T04:05:06.000Z"),
+  userId: "44444444-4444-4444-8444-444444444444",
+  visibility: "campus",
+  year: "year-2",
+};
+
+function createCandidateDbMock(rows: unknown[]) {
+  const query = {
+    from: vi.fn(() => query),
+    limit: vi.fn(async () => rows),
+    orderBy: vi.fn(() => query),
+    where: vi.fn(() => query),
+  };
+  const db = {
+    select: vi.fn(() => query),
+  };
+
+  return { db, query };
+}
 
 describe("recommendation read service", () => {
   beforeEach(() => {
     requireCompletedAcademicProfileMock.mockReset();
+    createDbMock.mockReset();
   });
 
   it("builds the initial empty recommendation feed DTO", () => {
@@ -43,6 +90,53 @@ describe("recommendation read service", () => {
     ]);
   });
 
+  it("clamps recommendation candidate limits", () => {
+    expect(getRecommendationCandidateLimit()).toBe(50);
+    expect(getRecommendationCandidateLimit(0)).toBe(1);
+    expect(getRecommendationCandidateLimit(12.8)).toBe(12);
+    expect(getRecommendationCandidateLimit(250)).toBe(100);
+  });
+
+  it("builds recommendation candidate DTOs from campus-visible profile rows", () => {
+    expect(buildRecommendationCandidateProfile(candidateRow)).toEqual({
+      collaborationPreference: ["pair study"],
+      completionStatus: "basic_complete",
+      helpNeeded: ["signals"],
+      helpOffered: ["typescript debugging"],
+      interests: ["web apps"],
+      major: "computer-science",
+      modules: ["COMP1048"],
+      nickname: "TypeScript Builder",
+      skills: ["react"],
+      updatedAt: "2026-01-02T04:05:06.000Z",
+      userId: "44444444-4444-4444-8444-444444444444",
+      visibility: "campus",
+      year: "year-2",
+    });
+  });
+
+  it("rejects private candidate rows before they can enter recommendation scoring", () => {
+    expect(() =>
+      buildRecommendationCandidateProfile({
+        ...candidateRow,
+        visibility: "private",
+      } as unknown as RecommendationCandidateProfileRow),
+    ).toThrow();
+  });
+
+  it("reads campus-visible candidate profiles through the Drizzle query scaffold", async () => {
+    const { db, query } = createCandidateDbMock([candidateRow]);
+
+    await expect(
+      listCampusVisibleRecommendationCandidates(db as unknown as DbClient, currentUserId, { limit: 5 }),
+    ).resolves.toEqual([buildRecommendationCandidateProfile(candidateRow)]);
+    expect(db.select).toHaveBeenCalledOnce();
+    expect(query.from).toHaveBeenCalledOnce();
+    expect(query.where).toHaveBeenCalledOnce();
+    expect(query.orderBy).toHaveBeenCalledOnce();
+    expect(query.limit).toHaveBeenCalledWith(5);
+  });
+
   it("requires a completed academic profile before reading recommendations", async () => {
     requireCompletedAcademicProfileMock.mockResolvedValue({
       canCreatePost: true,
@@ -58,7 +152,7 @@ describe("recommendation read service", () => {
         emailDomain: "nottingham.edu.cn",
         emailVerified: true,
         role: "student",
-        userId: "33333333-3333-4333-8333-333333333333",
+        userId: currentUserId,
         verifiedAt: "2026-01-02T03:04:05.000Z",
       },
       state: "profile_ready",
@@ -69,5 +163,37 @@ describe("recommendation read service", () => {
       items: [],
     });
     expect(requireCompletedAcademicProfileMock).toHaveBeenCalledOnce();
+  });
+
+  it("requires a completed academic profile before reading recommendation candidates", async () => {
+    const { db, query } = createCandidateDbMock([candidateRow]);
+
+    createDbMock.mockReturnValue(db);
+    requireCompletedAcademicProfileMock.mockResolvedValue({
+      canCreatePost: true,
+      canViewOwnProfile: true,
+      nextRoute: "/feed",
+      profile: {
+        completionStatus: "basic_complete",
+        id: "11111111-1111-4111-8111-111111111111",
+      },
+      session: {
+        authUserId: "22222222-2222-4222-8222-222222222222",
+        email: "student@nottingham.edu.cn",
+        emailDomain: "nottingham.edu.cn",
+        emailVerified: true,
+        role: "student",
+        userId: currentUserId,
+        verifiedAt: "2026-01-02T03:04:05.000Z",
+      },
+      state: "profile_ready",
+    });
+
+    await expect(getCurrentUserRecommendationCandidates({ limit: 1 })).resolves.toEqual([
+      buildRecommendationCandidateProfile(candidateRow),
+    ]);
+    expect(requireCompletedAcademicProfileMock).toHaveBeenCalledOnce();
+    expect(createDbMock).toHaveBeenCalledOnce();
+    expect(query.limit).toHaveBeenCalledWith(1);
   });
 });
