@@ -1,8 +1,9 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
-import type { Post } from "@/features/posts/schemas";
+import type { Post, PostAuthorSummary } from "@/features/posts/schemas";
 import { getCurrentUserPostDetail } from "@/features/posts/server/service";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +29,18 @@ function formatDate(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function AuthorHeading({ author }: { author: PostAuthorSummary }) {
+  if (!author.userId) {
+    return <h2 className="text-xl font-semibold text-[var(--color-ink)]">{author.nickname}</h2>;
+  }
+
+  return (
+    <Link href={`/profiles/${author.userId}`} className="text-xl font-semibold text-[var(--color-ink)] hover:text-[var(--color-accent)]">
+      {author.nickname}
+    </Link>
+  );
 }
 
 export default async function PostDetailPage({ params }: PostDetailPageProps) {
@@ -73,7 +86,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
       <aside className="border border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-5">
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">Author</p>
-          <h2 className="text-xl font-semibold text-[var(--color-ink)]">{post.author.nickname}</h2>
+          <AuthorHeading author={post.author} />
           <div className="flex flex-wrap gap-2 text-xs font-medium text-[var(--color-muted)]">
             {post.author.major ? <span>{post.author.major}</span> : null}
             {post.author.year ? <span>{post.author.year}</span> : null}

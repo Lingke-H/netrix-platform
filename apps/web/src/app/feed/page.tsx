@@ -1,6 +1,8 @@
+import Link from "next/link";
+
 import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
-import type { PostFeedItem } from "@/features/posts/schemas";
+import type { PostAuthorSummary, PostFeedItem } from "@/features/posts/schemas";
 import { getCurrentUserCampusFeed } from "@/features/posts/server/service";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +32,18 @@ function FeedEmptyState() {
   );
 }
 
+function AuthorName({ author }: { author: PostAuthorSummary }) {
+  if (!author.userId) {
+    return <span>{author.nickname}</span>;
+  }
+
+  return (
+    <Link href={`/profiles/${author.userId}`} className="font-semibold text-[var(--color-ink)] hover:text-[var(--color-accent)]">
+      {author.nickname}
+    </Link>
+  );
+}
+
 function FeedPostCard({ post }: { post: PostFeedItem }) {
   return (
     <article className="border border-[var(--color-line)] bg-[var(--color-surface-strong)] px-5 py-4">
@@ -43,7 +57,7 @@ function FeedPostCard({ post }: { post: PostFeedItem }) {
         <p className="line-clamp-3 text-sm leading-7 text-[var(--color-muted)]">{post.body}</p>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--color-muted)]">
-        <span>{post.author.nickname}</span>
+        <AuthorName author={post.author} />
         {post.author.major ? <span>{post.author.major}</span> : null}
         {post.author.year ? <span>{post.author.year}</span> : null}
         {post.modules.map((module) => (
