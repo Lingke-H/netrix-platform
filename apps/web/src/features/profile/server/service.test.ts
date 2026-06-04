@@ -5,6 +5,8 @@ import {
   AcademicProfileUpsertError,
   buildAcademicProfileDto,
   buildProfileRouteState,
+  buildPublicAcademicProfileDto,
+  canViewPublicAcademicProfile,
   normalizeAcademicProfileFormData,
   parseAcademicProfileUpsertInput,
   splitAcademicProfileFormList,
@@ -163,5 +165,29 @@ describe("academic profile read service", () => {
       profile: null,
       visibility: "campus",
     });
+  });
+
+  it("builds public academic profile DTOs and gates private profiles by viewer", () => {
+    const campusProfile = buildPublicAcademicProfileDto(profileRow);
+    const privateProfile = buildPublicAcademicProfileDto({
+      ...profileRow,
+      visibility: "private",
+    });
+
+    expect(campusProfile).toEqual({
+      collaborationPreference: validInput.collaborationPreference,
+      completionStatus: "basic_complete",
+      interests: validInput.interests,
+      major: validInput.major,
+      modules: validInput.modules,
+      nickname: validInput.nickname,
+      updatedAt: "2026-01-02T04:05:06.000Z",
+      userId,
+      visibility: "campus",
+      year: validInput.year,
+    });
+    expect(canViewPublicAcademicProfile(campusProfile, "44444444-4444-4444-8444-444444444444")).toBe(true);
+    expect(canViewPublicAcademicProfile(privateProfile, "44444444-4444-4444-8444-444444444444")).toBe(false);
+    expect(canViewPublicAcademicProfile(privateProfile, userId)).toBe(true);
   });
 });

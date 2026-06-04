@@ -3,8 +3,10 @@ import { eq } from "drizzle-orm";
 import {
   academicProfileFormInputSchema,
   academicProfileSchema,
+  publicAcademicProfileSchema,
   type AcademicProfile,
   type AcademicProfileFormInput,
+  type PublicAcademicProfile,
 } from "@/features/profile/schemas";
 import type { ProfileRouteState } from "@/features/profile/types";
 import { getOnboardingGate, type OnboardingGate } from "@/server/auth/onboarding-gate";
@@ -47,6 +49,20 @@ type AcademicProfileDtoRow = {
   visibility: "private" | "campus" | "public";
   year: "foundation" | "year-1" | "year-2" | "year-3" | "year-4" | "postgraduate";
 };
+
+type PublicAcademicProfileDtoRow = Pick<
+  AcademicProfileDtoRow,
+  | "collaborationPreference"
+  | "completionStatus"
+  | "interests"
+  | "major"
+  | "modules"
+  | "nickname"
+  | "updatedAt"
+  | "userId"
+  | "visibility"
+  | "year"
+>;
 
 export type CurrentUserProfileData = {
   gate: OnboardingGate;
@@ -131,6 +147,21 @@ export function buildAcademicProfileDto(row: AcademicProfileDtoRow): AcademicPro
   });
 }
 
+export function buildPublicAcademicProfileDto(row: PublicAcademicProfileDtoRow): PublicAcademicProfile {
+  return publicAcademicProfileSchema.parse({
+    collaborationPreference: row.collaborationPreference,
+    completionStatus: row.completionStatus,
+    interests: row.interests,
+    major: row.major,
+    modules: row.modules,
+    nickname: row.nickname,
+    updatedAt: row.updatedAt.toISOString(),
+    userId: row.userId,
+    visibility: row.visibility,
+    year: row.year,
+  });
+}
+
 export function buildProfileRouteState(profile: AcademicProfile | null, gate: OnboardingGate): ProfileRouteState {
   return {
     completionStatus: profile?.completionStatus ?? gate.profile?.completionStatus ?? "incomplete",
@@ -163,6 +194,51 @@ export async function getAcademicProfileForUser(db: DbClient, userId: string): P
     .limit(1);
 
   return profile ? buildAcademicProfileDto(profile) : null;
+}
+
+function isProfileUserId(value: string) {
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(
+    value,
+  );
+}
+
+export function canViewPublicAcademicProfile(profile: PublicAcademicProfile, viewerUserId: string) {
+  return profile.visibility !== "private" || profile.userId === viewerUserId;
+}
+
+export async function getVisibleAcademicProfileForUser(
+  db: DbClient,
+  targetUserId: string,
+  viewerUserId: string,
+): Promise<PublicAcademicProfile | null> {
+  if (!isProfileUserId(targetUserId)) {
+    return null;
+  }
+
+  const [profile] = await db
+    .select({
+      collaborationPreference: academicProfiles.collaborationPreference,
+      completionStatus: academicProfiles.completionStatus,
+      interests: academicProfiles.interests,
+      major: academicProfiles.major,
+      modules: academicProfiles.modules,
+      nickname: academicProfiles.nickname,
+      updatedAt: academicProfiles.updatedAt,
+      userId: academicProfiles.userId,
+      visibility: academicProfiles.visibility,
+      year: academicProfiles.year,
+    })
+    .from(academicProfiles)
+    .where(eq(academicProfiles.userId, targetUserId))
+    .limit(1);
+
+  if (!profile) {
+    return null;
+  }
+
+  const publicProfile = buildPublicAcademicProfileDto(profile);
+
+  return canViewPublicAcademicProfile(publicProfile, viewerUserId) ? publicProfile : null;
 }
 
 export async function upsertAcademicProfile(
@@ -226,4 +302,11 @@ export async function getCurrentUserProfileData(): Promise<CurrentUserProfileDat
     gate,
     routeState: buildProfileRouteState(profile, gate),
   };
+}
+
+export async function getCurrentUserVisibleAcademicProfile(targetUserId: string): Promise<PublicAcademicProfile | null> {
+  const session = await requireVerifiedCampusUser();
+  const db = createDb();
+
+  return getVisibleAcademicProfileForUser(db, targetUserId, session.userId);
 }

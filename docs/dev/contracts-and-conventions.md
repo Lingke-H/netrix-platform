@@ -68,6 +68,8 @@ Drizzle 结构是数据库结构的 TypeScript 源头。输入校验、server ac
 
 `profile.visibility` 与 `post.visibility` 独立生效。已完成基础档案但选择 `private` 的用户仍可创建 `campus` 帖子；帖子内容按帖子自身可见性展示，但 feed、详情页和后续推荐入口中的 `PostAuthorSummary` 不得暴露该用户的 `userId`、`major`、`year` 或真实 `nickname`。此时作者摘要统一显示为 `Private profile`，并保留 `profileVisibility: "private"` 作为界面提示和后续权限判断线索。只有 `campus` 或未来明确开放的 `public` profile 可以在帖子作者摘要中展示学术昵称、专业和年级。
 
+`/profiles/[id]` 必须通过服务端可见性 gate 读取档案。已验证校园用户可以读取 `campus` profile；`private` profile 只能由档案本人或明确的服务端平台权限流程读取，对其他用户应返回不可见状态，不得在页面层绕过服务端判断。第一版 MVP 不在 UI 中开放 `public`，但后端 gate 应保留识别能力。
+
 ## 5. Server Actions 与 Route Handlers
 
 默认规则如下：
