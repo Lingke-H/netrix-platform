@@ -1,4 +1,13 @@
-import { academicProfileFormInputSchema, type AcademicProfileFormInput } from "@/features/profile/schemas";
+import { eq } from "drizzle-orm";
+
+import {
+  academicProfileFormInputSchema,
+  academicProfileSchema,
+  type AcademicProfile,
+  type AcademicProfileFormInput,
+} from "@/features/profile/schemas";
+import type { ProfileRouteState } from "@/features/profile/types";
+import { getOnboardingGate, type OnboardingGate } from "@/server/auth/onboarding-gate";
 import { requireVerifiedCampusUser } from "@/server/auth/session";
 import { createDb, type DbClient } from "@/server/db/client";
 import { academicProfiles } from "@/server/db/schema";
@@ -21,6 +30,28 @@ export class AcademicProfileUpsertError extends Error {
     this.name = "AcademicProfileUpsertError";
   }
 }
+
+type AcademicProfileDtoRow = {
+  collaborationPreference: string[];
+  completionStatus: "incomplete" | "basic_complete" | "recommendation_ready";
+  createdAt: Date;
+  helpNeeded: string[];
+  helpOffered: string[];
+  interests: string[];
+  major: "math" | "computer-science" | "eee" | "fam" | "ibe" | "other";
+  modules: string[];
+  nickname: string;
+  skills: string[];
+  updatedAt: Date;
+  userId: string;
+  visibility: "private" | "campus" | "public";
+  year: "foundation" | "year-1" | "year-2" | "year-3" | "year-4" | "postgraduate";
+};
+
+export type CurrentUserProfileData = {
+  gate: OnboardingGate;
+  routeState: ProfileRouteState;
+};
 
 export const academicProfileUpsertInputSchema = academicProfileFormInputSchema.omit({
   completionStatus: true,
@@ -45,6 +76,59 @@ export function parseAcademicProfileUpsertInput(input: unknown, userId: string):
   }
 
   return trustedInput.data;
+}
+
+export function buildAcademicProfileDto(row: AcademicProfileDtoRow): AcademicProfile {
+  return academicProfileSchema.parse({
+    collaborationPreference: row.collaborationPreference,
+    completionStatus: row.completionStatus,
+    createdAt: row.createdAt.toISOString(),
+    helpNeeded: row.helpNeeded,
+    helpOffered: row.helpOffered,
+    interests: row.interests,
+    major: row.major,
+    modules: row.modules,
+    nickname: row.nickname,
+    skills: row.skills,
+    updatedAt: row.updatedAt.toISOString(),
+    userId: row.userId,
+    visibility: row.visibility,
+    year: row.year,
+  });
+}
+
+export function buildProfileRouteState(profile: AcademicProfile | null, gate: OnboardingGate): ProfileRouteState {
+  return {
+    completionStatus: profile?.completionStatus ?? gate.profile?.completionStatus ?? "incomplete",
+    portrait: null,
+    profile,
+    visibility: profile?.visibility ?? "campus",
+  };
+}
+
+export async function getAcademicProfileForUser(db: DbClient, userId: string): Promise<AcademicProfile | null> {
+  const [profile] = await db
+    .select({
+      collaborationPreference: academicProfiles.collaborationPreference,
+      completionStatus: academicProfiles.completionStatus,
+      createdAt: academicProfiles.createdAt,
+      helpNeeded: academicProfiles.helpNeeded,
+      helpOffered: academicProfiles.helpOffered,
+      interests: academicProfiles.interests,
+      major: academicProfiles.major,
+      modules: academicProfiles.modules,
+      nickname: academicProfiles.nickname,
+      skills: academicProfiles.skills,
+      updatedAt: academicProfiles.updatedAt,
+      userId: academicProfiles.userId,
+      visibility: academicProfiles.visibility,
+      year: academicProfiles.year,
+    })
+    .from(academicProfiles)
+    .where(eq(academicProfiles.userId, userId))
+    .limit(1);
+
+  return profile ? buildAcademicProfileDto(profile) : null;
 }
 
 export async function upsertAcademicProfile(
@@ -97,4 +181,15 @@ export async function upsertCurrentUserAcademicProfile(input: unknown): Promise<
   const db = createDb();
 
   return upsertAcademicProfile(db, session.userId, input);
+}
+
+export async function getCurrentUserProfileData(): Promise<CurrentUserProfileData> {
+  const gate = await getOnboardingGate();
+  const db = createDb();
+  const profile = await getAcademicProfileForUser(db, gate.session.userId);
+
+  return {
+    gate,
+    routeState: buildProfileRouteState(profile, gate),
+  };
 }
