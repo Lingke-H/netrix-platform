@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Pencil } from "lucide-react";
 
 import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
@@ -36,10 +37,21 @@ function ProfileSummary({ profile }: { profile: AcademicProfile }) {
   return (
     <section className="space-y-5">
       <div className="border border-[var(--color-line)] bg-[var(--color-surface-strong)] p-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusBadge tone="ready">{profile.completionStatus}</StatusBadge>
-          <StatusBadge>{profile.visibility}</StatusBadge>
-          <span className="text-xs font-medium text-[var(--color-muted)]">Updated {new Date(profile.updatedAt).toLocaleString("en")}</span>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge tone="ready">{profile.completionStatus}</StatusBadge>
+            <StatusBadge>{profile.visibility}</StatusBadge>
+            <span className="text-xs font-medium text-[var(--color-muted)]">
+              Updated {new Date(profile.updatedAt).toLocaleString("en")}
+            </span>
+          </div>
+          <Link
+            href="/onboarding"
+            className="inline-flex items-center gap-2 border border-[var(--color-line)] bg-white px-3 py-2 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+          >
+            <Pencil size={16} aria-hidden="true" />
+            Edit profile
+          </Link>
         </div>
         <div className="mt-4 space-y-2">
           <h2 className="text-2xl font-semibold text-[var(--color-ink)]">{profile.nickname}</h2>
