@@ -1,8 +1,8 @@
 import { and, desc, eq, inArray, ne } from "drizzle-orm";
 
 import {
-  recommendationCandidateProfileSchema,
   type RecommendationCandidateProfile,
+  recommendationCandidateProfileSchema,
 } from "@/features/recommendations/schemas";
 import type { RecommendationFeedData } from "@/features/recommendations/types";
 import { requireCompletedAcademicProfile } from "@/server/auth/onboarding-gate";
@@ -28,6 +28,36 @@ export type RecommendationCandidateProfileRow = {
 export type RecommendationCandidateOptions = {
   limit?: number;
 };
+
+export type RecommendationScoringProfile = Pick<
+  RecommendationCandidateProfile,
+  "collaborationPreference" | "helpNeeded" | "helpOffered" | "interests" | "modules" | "skills"
+>;
+
+export type RecommendationScoreSummary = {
+  collaborationPreferenceOverlap: number;
+  helpComplementarity: number;
+  interestOverlap: number;
+  moduleOverlap: number;
+  skillOverlap: number;
+  total: number;
+};
+
+export type ScoredRecommendationCandidate = {
+  candidate: RecommendationCandidateProfile;
+  complementarySignals: string[];
+  score: number;
+  scoreSummary: RecommendationScoreSummary;
+  sharedSignals: string[];
+};
+
+const recommendationScoringWeights = {
+  collaborationPreferenceOverlap: 1,
+  helpComplementarity: 4,
+  interestOverlap: 2,
+  moduleOverlap: 3,
+  skillOverlap: 2,
+} as const;
 
 export function buildEmptyRecommendationFeedData(): RecommendationFeedData {
   return {
@@ -58,6 +88,105 @@ export function buildRecommendationCandidateProfile(
     visibility: row.visibility,
     year: row.year,
   });
+}
+
+function normalizeSignal(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function uniqueSignals(values: string[]) {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  values.forEach((value) => {
+    const normalized = normalizeSignal(value);
+
+    if (!normalized || seen.has(normalized)) {
+      return;
+    }
+
+    seen.add(normalized);
+    result.push(value.trim());
+  });
+
+  return result;
+}
+
+function findOverlappingSignals(left: string[], right: string[]) {
+  const rightByNormalizedSignal = new Map(uniqueSignals(right).map((value) => [normalizeSignal(value), value]));
+
+  return uniqueSignals(left)
+    .map((value) => rightByNormalizedSignal.get(normalizeSignal(value)))
+    .filter((value): value is string => Boolean(value));
+}
+
+function formatSignals(prefix: string, values: string[]) {
+  return values.map((value) => `${prefix}: ${value}`);
+}
+
+export function scoreRecommendationCandidate(
+  viewerProfile: RecommendationScoringProfile,
+  candidate: RecommendationCandidateProfile,
+): ScoredRecommendationCandidate {
+  const moduleMatches = findOverlappingSignals(viewerProfile.modules, candidate.modules);
+  const interestMatches = findOverlappingSignals(viewerProfile.interests, candidate.interests);
+  const skillMatches = findOverlappingSignals(viewerProfile.skills, candidate.skills);
+  const collaborationMatches = findOverlappingSignals(
+    viewerProfile.collaborationPreference,
+    candidate.collaborationPreference,
+  );
+  const candidateCanHelpViewer = findOverlappingSignals(viewerProfile.helpNeeded, candidate.helpOffered);
+  const viewerCanHelpCandidate = findOverlappingSignals(viewerProfile.helpOffered, candidate.helpNeeded);
+
+  const scoreSummary: RecommendationScoreSummary = {
+    collaborationPreferenceOverlap:
+      collaborationMatches.length * recommendationScoringWeights.collaborationPreferenceOverlap,
+    helpComplementarity:
+      (candidateCanHelpViewer.length + viewerCanHelpCandidate.length) *
+      recommendationScoringWeights.helpComplementarity,
+    interestOverlap: interestMatches.length * recommendationScoringWeights.interestOverlap,
+    moduleOverlap: moduleMatches.length * recommendationScoringWeights.moduleOverlap,
+    skillOverlap: skillMatches.length * recommendationScoringWeights.skillOverlap,
+    total: 0,
+  };
+  scoreSummary.total =
+    scoreSummary.collaborationPreferenceOverlap +
+    scoreSummary.helpComplementarity +
+    scoreSummary.interestOverlap +
+    scoreSummary.moduleOverlap +
+    scoreSummary.skillOverlap;
+
+  return {
+    candidate,
+    complementarySignals: [
+      ...formatSignals("Candidate can help with", candidateCanHelpViewer),
+      ...formatSignals("Viewer can help with", viewerCanHelpCandidate),
+    ],
+    score: scoreSummary.total,
+    scoreSummary,
+    sharedSignals: [
+      ...formatSignals("Shared module", moduleMatches),
+      ...formatSignals("Shared interest", interestMatches),
+      ...formatSignals("Shared skill", skillMatches),
+      ...formatSignals("Shared collaboration preference", collaborationMatches),
+    ],
+  };
+}
+
+export function scoreRecommendationCandidates(
+  viewerProfile: RecommendationScoringProfile,
+  candidates: RecommendationCandidateProfile[],
+): ScoredRecommendationCandidate[] {
+  return candidates
+    .map((candidate) => scoreRecommendationCandidate(viewerProfile, candidate))
+    .filter((candidate) => candidate.score > 0)
+    .sort((left, right) => {
+      if (right.score !== left.score) {
+        return right.score - left.score;
+      }
+
+      return right.candidate.updatedAt.localeCompare(left.candidate.updatedAt);
+    });
 }
 
 export async function listCampusVisibleRecommendationCandidates(

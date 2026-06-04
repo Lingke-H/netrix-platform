@@ -22,7 +22,10 @@ import {
   getCurrentUserRecommendationFeed,
   getRecommendationCandidateLimit,
   listCampusVisibleRecommendationCandidates,
+  scoreRecommendationCandidate,
+  scoreRecommendationCandidates,
   type RecommendationCandidateProfileRow,
+  type RecommendationScoringProfile,
 } from "@/features/recommendations/server/service";
 
 const currentUserId = "33333333-3333-4333-8333-333333333333";
@@ -41,6 +44,15 @@ const candidateRow: RecommendationCandidateProfileRow = {
   userId: "44444444-4444-4444-8444-444444444444",
   visibility: "campus",
   year: "year-2",
+};
+
+const viewerScoringProfile: RecommendationScoringProfile = {
+  collaborationPreference: ["pair study", "project teammate"],
+  helpNeeded: ["typescript debugging", "signals"],
+  helpOffered: ["react"],
+  interests: ["web apps", "coursework systems"],
+  modules: ["COMP1048", "ELEC2043"],
+  skills: ["react", "typescript"],
 };
 
 function createCandidateDbMock(rows: unknown[]) {
@@ -135,6 +147,62 @@ describe("recommendation read service", () => {
     expect(query.where).toHaveBeenCalledOnce();
     expect(query.orderBy).toHaveBeenCalledOnce();
     expect(query.limit).toHaveBeenCalledWith(5);
+  });
+
+  it("scores recommendation candidates from transparent profile signal overlap", () => {
+    const candidate = buildRecommendationCandidateProfile(candidateRow);
+
+    expect(scoreRecommendationCandidate(viewerScoringProfile, candidate)).toEqual({
+      candidate,
+      complementarySignals: ["Candidate can help with: typescript debugging"],
+      score: 12,
+      scoreSummary: {
+        collaborationPreferenceOverlap: 1,
+        helpComplementarity: 4,
+        interestOverlap: 2,
+        moduleOverlap: 3,
+        skillOverlap: 2,
+        total: 12,
+      },
+      sharedSignals: [
+        "Shared module: COMP1048",
+        "Shared interest: web apps",
+        "Shared skill: react",
+        "Shared collaboration preference: pair study",
+      ],
+    });
+  });
+
+  it("sorts scored candidates by score and filters candidates without usable signals", () => {
+    const strongerCandidate = buildRecommendationCandidateProfile({
+      ...candidateRow,
+      helpOffered: ["typescript debugging", "signals"],
+      modules: ["COMP1048", "ELEC2043"],
+      updatedAt: new Date("2026-01-02T01:00:00.000Z"),
+      userId: "55555555-5555-4555-8555-555555555555",
+    });
+    const weakerCandidate = buildRecommendationCandidateProfile(candidateRow);
+    const noSignalCandidate = buildRecommendationCandidateProfile({
+      ...candidateRow,
+      collaborationPreference: ["solo study"],
+      helpNeeded: ["calculus"],
+      helpOffered: ["presentation"],
+      interests: ["finance"],
+      modules: ["MATH1001"],
+      skills: ["excel"],
+      userId: "66666666-6666-4666-8666-666666666666",
+    });
+
+    expect(scoreRecommendationCandidates(viewerScoringProfile, [weakerCandidate, noSignalCandidate, strongerCandidate])).toEqual([
+      expect.objectContaining({
+        candidate: strongerCandidate,
+        score: 19,
+      }),
+      expect.objectContaining({
+        candidate: weakerCandidate,
+        score: 12,
+      }),
+    ]);
   });
 
   it("requires a completed academic profile before reading recommendations", async () => {
