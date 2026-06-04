@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { Lock, MessageCircle, UserRound } from "lucide-react";
+import { UserRound } from "lucide-react";
 
 import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
 import type { Major, StudyYear } from "@/features/profile/schemas";
-import type { Recommendation } from "@/features/recommendations/schemas";
-import { getCurrentUserRecommendationFeed } from "@/features/recommendations/server/service";
+import {
+  getCurrentUserScoredRecommendationCandidates,
+  type ScoredRecommendationCandidate,
+} from "@/features/recommendations/server/service";
 
 export const dynamic = "force-dynamic";
 
@@ -27,18 +29,17 @@ const studyYearLabels: Record<StudyYear, string> = {
   postgraduate: "Postgraduate",
 };
 
-function RecommendationsEmptyState({ hasEnoughSignals }: { hasEnoughSignals: boolean }) {
+function RecommendationsEmptyState() {
   return (
     <div className="space-y-3 border border-dashed border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-5">
       <p className="text-sm leading-7 text-[var(--color-muted)]">
-        No recommendations are ready yet. The next slice can connect structured profile and post signals into this
-        feed.
+        No scored recommendation candidates are ready yet. This can happen when there are not enough campus-visible
+        profiles with overlapping academic signals.
       </p>
-      {!hasEnoughSignals ? (
-        <p className="text-xs leading-6 text-[var(--color-muted)]">
-          Recommendation generation is waiting for enough academic signals from profiles, posts, modules, and interests.
-        </p>
-      ) : null}
+      <p className="text-xs leading-6 text-[var(--color-muted)]">
+        This view currently uses in-memory rule scoring only. It does not create recommendation rows or generate LLM
+        explanations.
+      </p>
     </div>
   );
 }
@@ -62,35 +63,29 @@ function SignalList({ label, items }: { label: string; items: string[] }) {
   );
 }
 
-function PrivateRecommendationCard({ recommendation }: { recommendation: Recommendation }) {
+function ScoreBreakdown({ scoredCandidate }: { scoredCandidate: ScoredRecommendationCandidate }) {
+  const rows = [
+    ["Module overlap", scoredCandidate.scoreSummary.moduleOverlap],
+    ["Interest overlap", scoredCandidate.scoreSummary.interestOverlap],
+    ["Skill overlap", scoredCandidate.scoreSummary.skillOverlap],
+    ["Help complementarity", scoredCandidate.scoreSummary.helpComplementarity],
+    ["Collaboration preference", scoredCandidate.scoreSummary.collaborationPreferenceOverlap],
+  ] as const;
+
   return (
-    <article className="space-y-4 border border-[var(--color-line)] bg-[var(--color-surface-strong)] p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center bg-[rgba(61,90,134,0.12)] text-[var(--color-info)]">
-            <Lock size={18} aria-hidden="true" />
-          </span>
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold text-[var(--color-ink)]">{recommendation.nickname}</h2>
-            <p className="text-sm leading-6 text-[var(--color-muted)]">{recommendation.explanationSummary}</p>
-          </div>
+    <dl className="grid gap-2 text-xs text-[var(--color-muted)] sm:grid-cols-2">
+      {rows.map(([label, value]) => (
+        <div key={label} className="flex items-center justify-between gap-3 border border-[var(--color-line)] bg-[var(--color-surface-strong)] px-3 py-2">
+          <dt>{label}</dt>
+          <dd className="font-semibold text-[var(--color-ink)]">{value}</dd>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <StatusBadge>{recommendation.status}</StatusBadge>
-          <StatusBadge tone="caution">private</StatusBadge>
-        </div>
-      </div>
-      <p className="text-xs leading-6 text-[var(--color-muted)]">
-        Connection actions and profile details stay hidden while this student keeps their academic profile private.
-      </p>
-    </article>
+      ))}
+    </dl>
   );
 }
 
-function VisibleRecommendationCard({ recommendation }: { recommendation: Recommendation }) {
-  if (recommendation.profileVisibility === "private") {
-    return <PrivateRecommendationCard recommendation={recommendation} />;
-  }
+function ScoredRecommendationCard({ scoredCandidate }: { scoredCandidate: ScoredRecommendationCandidate }) {
+  const { candidate } = scoredCandidate;
 
   return (
     <article className="space-y-5 border border-[var(--color-line)] bg-white p-5">
@@ -101,81 +96,54 @@ function VisibleRecommendationCard({ recommendation }: { recommendation: Recomme
           </span>
           <div className="space-y-2">
             <Link
-              href={`/profiles/${recommendation.recommendedUserId}`}
+              href={`/profiles/${candidate.userId}`}
               className="text-lg font-semibold text-[var(--color-ink)] transition hover:text-[var(--color-accent)]"
             >
-              {recommendation.nickname}
+              {candidate.nickname}
             </Link>
             <div className="flex flex-wrap gap-2 text-sm font-medium text-[var(--color-muted)]">
-              <span>{majorLabels[recommendation.major]}</span>
-              <span>{studyYearLabels[recommendation.year]}</span>
+              <span>{majorLabels[candidate.major]}</span>
+              <span>{studyYearLabels[candidate.year]}</span>
             </div>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <StatusBadge tone={recommendation.status === "active" ? "ready" : "info"}>{recommendation.status}</StatusBadge>
-          <StatusBadge>{recommendation.profileVisibility}</StatusBadge>
+          <StatusBadge tone="ready">score {scoredCandidate.score}</StatusBadge>
+          <StatusBadge>{candidate.visibility}</StatusBadge>
         </div>
       </div>
 
-      <p className="text-sm leading-7 text-[var(--color-muted)]">{recommendation.profileSummary}</p>
+      <ScoreBreakdown scoredCandidate={scoredCandidate} />
 
       <div className="grid gap-4 md:grid-cols-2">
-        <SignalList label="Shared signals" items={recommendation.sharedSignals} />
-        <SignalList label="Complementary signals" items={recommendation.complementarySignals} />
-      </div>
-
-      <div className="space-y-2 border border-[var(--color-line)] bg-[var(--color-surface-strong)] p-4">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">Why this match</h3>
-        <p className="text-sm leading-7 text-[var(--color-ink)]">{recommendation.explanationSummary}</p>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-2xl text-sm leading-7 text-[var(--color-muted)]">{recommendation.conversationStarter}</p>
-        <button
-          type="button"
-          disabled={!recommendation.canRequestConnect}
-          className="inline-flex items-center gap-2 bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition enabled:hover:bg-[rgba(29,107,87,0.9)] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <MessageCircle size={16} aria-hidden="true" />
-          Request connect
-        </button>
+        <SignalList label="Shared signals" items={scoredCandidate.sharedSignals} />
+        <SignalList label="Complementary signals" items={scoredCandidate.complementarySignals} />
       </div>
     </article>
   );
 }
 
-function RecommendationCard({ recommendation }: { recommendation: Recommendation }) {
-  return recommendation.profileVisibility === "private" ? (
-    <PrivateRecommendationCard recommendation={recommendation} />
-  ) : (
-    <VisibleRecommendationCard recommendation={recommendation} />
-  );
-}
-
 export default async function RecommendationsPage() {
-  const feed = await getCurrentUserRecommendationFeed();
+  const scoredCandidates = await getCurrentUserScoredRecommendationCandidates();
 
   return (
     <PageFrame
       eyebrow="Recommendations"
       title="Recommended Connections"
-      description="Explainable academic connection recommendations generated from user-confirmed profile and post signals."
+      description="Rule-scored academic connection candidates generated from user-confirmed profile signals."
     >
       <div className="flex flex-wrap items-center gap-3">
         <StatusBadge tone="ready">requires completed profile</StatusBadge>
-        <StatusBadge>{feed.items.length} recommendations</StatusBadge>
-        <StatusBadge tone={feed.hasEnoughSignals ? "ready" : "caution"}>
-          {feed.hasEnoughSignals ? "signals ready" : "signals pending"}
-        </StatusBadge>
+        <StatusBadge>{scoredCandidates.length} scored candidates</StatusBadge>
+        <StatusBadge tone="caution">no LLM explanation</StatusBadge>
       </div>
 
-      {feed.items.length === 0 ? (
-        <RecommendationsEmptyState hasEnoughSignals={feed.hasEnoughSignals} />
+      {scoredCandidates.length === 0 ? (
+        <RecommendationsEmptyState />
       ) : (
         <div className="space-y-4">
-          {feed.items.map((recommendation) => (
-            <RecommendationCard key={recommendation.recommendationId} recommendation={recommendation} />
+          {scoredCandidates.map((scoredCandidate) => (
+            <ScoredRecommendationCard key={scoredCandidate.candidate.userId} scoredCandidate={scoredCandidate} />
           ))}
         </div>
       )}
