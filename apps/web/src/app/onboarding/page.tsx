@@ -151,6 +151,10 @@ function AcademicProfileForm({ profile }: { profile: AcademicProfile | null }) {
             <option value="campus">Campus</option>
             <option value="private">Private</option>
           </select>
+          <span className="block text-xs leading-6 text-[var(--color-muted)]">
+            Campus is visible to verified UNNC campus users. Private keeps the profile visible only to you and platform
+            permissions.
+          </span>
         </label>
 
         <button

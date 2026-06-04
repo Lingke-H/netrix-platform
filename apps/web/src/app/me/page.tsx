@@ -34,6 +34,11 @@ function ProfileField({ label, items }: { label: string; items: string[] }) {
 }
 
 function ProfileSummary({ profile }: { profile: AcademicProfile }) {
+  const visibilityDescription =
+    profile.visibility === "private"
+      ? "Private: visible only to you and platform permissions."
+      : "Campus: visible to verified UNNC campus users.";
+
   return (
     <section className="space-y-5">
       <div className="border border-[var(--color-line)] bg-[var(--color-surface-strong)] p-5">
@@ -59,6 +64,7 @@ function ProfileSummary({ profile }: { profile: AcademicProfile }) {
             <span>{profile.major}</span>
             <span>{profile.year}</span>
           </div>
+          <p className="text-xs leading-6 text-[var(--color-muted)]">{visibilityDescription}</p>
         </div>
       </div>
 
