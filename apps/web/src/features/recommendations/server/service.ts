@@ -13,6 +13,11 @@ import {
   recommendationExplanationPromptVersion,
 } from "@/server/ai/prompts/recommendation-explanation.v1";
 import {
+  createMockOpenAiJsonProvider,
+  type OpenAiJsonRequest,
+  type OpenAiJsonUsage,
+} from "@/server/ai/provider";
+import {
   type RecommendationCandidateProfile,
   recommendationCandidateProfileSchema,
 } from "@/features/recommendations/schemas";
@@ -77,6 +82,35 @@ export type RecommendationExplanationOutputParseResult =
       code: "INVALID_RECOMMENDATION_EXPLANATION_OUTPUT";
       issues: string[];
       ok: false;
+    };
+
+export type RecommendationExplanationMockGenerationOptions = {
+  mockOutput: unknown | ((request: OpenAiJsonRequest) => Promise<unknown> | unknown);
+  model?: string;
+  rawResponseId?: string | null;
+  temperature?: number;
+  usage?: Partial<OpenAiJsonUsage>;
+};
+
+export type RecommendationExplanationGenerationResult =
+  | {
+      explanation: RecommendationExplanationOutput;
+      model: string;
+      ok: true;
+      promptVersion: typeof recommendationExplanationPromptVersion;
+      provider: "mock";
+      rawResponseId: string | null;
+      usage: OpenAiJsonUsage;
+    }
+  | {
+      code: "INVALID_RECOMMENDATION_EXPLANATION_OUTPUT";
+      issues: string[];
+      model: string;
+      ok: false;
+      promptVersion: typeof recommendationExplanationPromptVersion;
+      provider: "mock";
+      rawResponseId: string | null;
+      usage: OpenAiJsonUsage;
     };
 
 const recommendationScoringWeights = {
@@ -286,6 +320,50 @@ export function parseRecommendationExplanationOutput(
   return {
     ok: true,
     output: parsedOutput.data,
+  };
+}
+
+export async function generateRecommendationExplanationWithMockProvider(
+  viewerProfile: RecommendationScoringProfile,
+  scoredCandidate: ScoredRecommendationCandidate,
+  options: RecommendationExplanationMockGenerationOptions,
+): Promise<RecommendationExplanationGenerationResult> {
+  const promptPayload = buildRecommendationExplanationPromptPayload(viewerProfile, scoredCandidate);
+  const model = options.model ?? "mock-recommendation-explainer";
+  const provider = createMockOpenAiJsonProvider({
+    model,
+    output: options.mockOutput,
+    rawResponseId: options.rawResponseId,
+    usage: options.usage,
+  });
+  const response = await provider.generateJson({
+    messages: promptPayload.messages,
+    model,
+    promptVersion: promptPayload.promptVersion,
+    temperature: options.temperature ?? 0.2,
+  });
+  const parsedOutput = parseRecommendationExplanationOutput(response.output);
+  const metadata = {
+    model: response.model,
+    promptVersion: promptPayload.promptVersion,
+    provider: "mock" as const,
+    rawResponseId: response.rawResponseId,
+    usage: response.usage,
+  };
+
+  if (!parsedOutput.ok) {
+    return {
+      ...metadata,
+      code: parsedOutput.code,
+      issues: parsedOutput.issues,
+      ok: false,
+    };
+  }
+
+  return {
+    ...metadata,
+    explanation: parsedOutput.output,
+    ok: true,
   };
 }
 

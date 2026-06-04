@@ -27,6 +27,7 @@ import {
   buildRecommendationCandidateProfile,
   buildRecommendationExplanationInput,
   buildRecommendationExplanationPromptPayload,
+  generateRecommendationExplanationWithMockProvider,
   getCurrentUserRecommendationCandidates,
   getCurrentUserRecommendationFeed,
   getCurrentUserScoredRecommendationCandidates,
@@ -348,6 +349,90 @@ describe("recommendation read service", () => {
         expect.stringContaining("sharedSignals:"),
       ]),
       ok: false,
+    });
+  });
+
+  it("generates parsed recommendation explanations through the mock provider only", async () => {
+    const scoredCandidate = scoreRecommendationCandidate(
+      viewerScoringProfile,
+      buildRecommendationCandidateProfile(candidateRow),
+    );
+    const mockOutput = vi.fn(() => ({
+      complementarySignals: ["Candidate can help with TypeScript debugging"],
+      conversationStarter: "Ask how they usually debug COMP1048 React issues.",
+      explanationSummary: "You share COMP1048 and web app interests, with complementary TypeScript support.",
+      sharedSignals: ["COMP1048", "web apps"],
+    }));
+
+    await expect(
+      generateRecommendationExplanationWithMockProvider(viewerScoringProfile, scoredCandidate, {
+        mockOutput,
+        rawResponseId: "mock-recommendation-response-1",
+        usage: {
+          inputTokens: 64,
+          outputTokens: 48,
+        },
+      }),
+    ).resolves.toEqual({
+      explanation: {
+        complementarySignals: ["Candidate can help with TypeScript debugging"],
+        conversationStarter: "Ask how they usually debug COMP1048 React issues.",
+        explanationSummary: "You share COMP1048 and web app interests, with complementary TypeScript support.",
+        sharedSignals: ["COMP1048", "web apps"],
+      },
+      model: "mock-recommendation-explainer",
+      ok: true,
+      promptVersion: "recommendation-explanation.v1",
+      provider: "mock",
+      rawResponseId: "mock-recommendation-response-1",
+      usage: {
+        inputTokens: 64,
+        outputTokens: 48,
+      },
+    });
+    expect(mockOutput).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          expect.objectContaining({ role: "system" }),
+          expect.objectContaining({ role: "user" }),
+        ],
+        model: "mock-recommendation-explainer",
+        promptVersion: "recommendation-explanation.v1",
+        temperature: 0.2,
+      }),
+    );
+  });
+
+  it("returns stable errors when mock recommendation explanation output is invalid", async () => {
+    const scoredCandidate = scoreRecommendationCandidate(
+      viewerScoringProfile,
+      buildRecommendationCandidateProfile(candidateRow),
+    );
+
+    await expect(
+      generateRecommendationExplanationWithMockProvider(viewerScoringProfile, scoredCandidate, {
+        mockOutput: {
+          complementarySignals: [],
+          conversationStarter: "",
+          explanationSummary: "",
+          sharedSignals: [],
+        },
+      }),
+    ).resolves.toEqual({
+      code: "INVALID_RECOMMENDATION_EXPLANATION_OUTPUT",
+      issues: expect.arrayContaining([
+        expect.stringContaining("conversationStarter:"),
+        expect.stringContaining("explanationSummary:"),
+      ]),
+      model: "mock-recommendation-explainer",
+      ok: false,
+      promptVersion: "recommendation-explanation.v1",
+      provider: "mock",
+      rawResponseId: null,
+      usage: {
+        inputTokens: null,
+        outputTokens: null,
+      },
     });
   });
 
