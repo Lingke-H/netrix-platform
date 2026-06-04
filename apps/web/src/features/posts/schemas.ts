@@ -9,10 +9,11 @@ export const postStatusSchema = z.enum(["draft", "published", "archived"]);
 export const postTagSchema = z.string().trim().min(1).max(48);
 
 export const postAuthorSummarySchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string().uuid().nullable(),
   nickname: z.string().trim().min(2).max(40),
-  major: majorSchema,
-  year: studyYearSchema,
+  major: majorSchema.nullable(),
+  profileVisibility: visibilitySchema,
+  year: studyYearSchema.nullable(),
 });
 
 export const postSchema = z.object({

@@ -4,6 +4,7 @@ import {
   buildCampusFeedData,
   buildCampusFeedItem,
   buildPostDetailData,
+  buildPostAuthorSummary,
   CreatePostError,
   getCampusFeedPageSize,
   normalizeCreatePostFormData,
@@ -81,6 +82,7 @@ describe("campus feed service", () => {
     author: {
       major: "computer-science",
       nickname: "TypeScript Builder",
+      profileVisibility: "campus",
       userId: "11111111-1111-4111-8111-111111111111",
       year: "year-2",
     },
@@ -111,6 +113,21 @@ describe("campus feed service", () => {
       type: "question",
       updatedAt: "2026-01-02T04:05:06.000Z",
       visibility: "campus",
+    });
+  });
+
+  it("redacts private profile fields from post author summaries", () => {
+    expect(
+      buildPostAuthorSummary({
+        ...feedRow.author,
+        profileVisibility: "private",
+      }),
+    ).toEqual({
+      major: null,
+      nickname: "Private profile",
+      profileVisibility: "private",
+      userId: null,
+      year: null,
     });
   });
 

@@ -44,8 +44,8 @@ function FeedPostCard({ post }: { post: PostFeedItem }) {
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--color-muted)]">
         <span>{post.author.nickname}</span>
-        <span>{post.author.major}</span>
-        <span>{post.author.year}</span>
+        {post.author.major ? <span>{post.author.major}</span> : null}
+        {post.author.year ? <span>{post.author.year}</span> : null}
         {post.modules.map((module) => (
           <span key={module} className="bg-[var(--color-accent-soft)] px-2 py-1 text-[var(--color-accent)]">
             {module}

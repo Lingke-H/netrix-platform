@@ -46,6 +46,7 @@ type CampusFeedPostRow = {
   author: {
     major: "math" | "computer-science" | "eee" | "fam" | "ibe" | "other";
     nickname: string;
+    profileVisibility: "private" | "campus" | "public";
     userId: string;
     year: "foundation" | "year-1" | "year-2" | "year-3" | "year-4" | "postgraduate";
   };
@@ -100,9 +101,23 @@ export function getCampusFeedPageSize(limit = 20) {
   return Math.min(Math.max(Math.trunc(limit), 1), 50);
 }
 
+export function buildPostAuthorSummary(row: CampusFeedPostRow["author"]) {
+  if (row.profileVisibility === "private") {
+    return {
+      major: null,
+      nickname: "Private profile",
+      profileVisibility: row.profileVisibility,
+      userId: null,
+      year: null,
+    };
+  }
+
+  return row;
+}
+
 export function buildCampusFeedItem(row: CampusFeedPostRow): PostFeedItem {
   return postFeedItemSchema.parse({
-    author: row.author,
+    author: buildPostAuthorSummary(row.author),
     body: row.body,
     createdAt: row.createdAt.toISOString(),
     id: row.id,
@@ -120,7 +135,7 @@ export function buildCampusFeedItem(row: CampusFeedPostRow): PostFeedItem {
 
 export function buildCampusPostDetail(row: CampusPostDetailRow): Post {
   return postSchema.parse({
-    author: row.author,
+    author: buildPostAuthorSummary(row.author),
     body: row.body,
     createdAt: row.createdAt.toISOString(),
     id: row.id,
@@ -160,6 +175,7 @@ function selectCampusPostRows(db: DbClient) {
       author: {
         major: academicProfiles.major,
         nickname: academicProfiles.nickname,
+        profileVisibility: academicProfiles.visibility,
         userId: academicProfiles.userId,
         year: academicProfiles.year,
       },

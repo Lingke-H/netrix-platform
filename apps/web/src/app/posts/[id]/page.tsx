@@ -75,8 +75,8 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">Author</p>
           <h2 className="text-xl font-semibold text-[var(--color-ink)]">{post.author.nickname}</h2>
           <div className="flex flex-wrap gap-2 text-xs font-medium text-[var(--color-muted)]">
-            <span>{post.author.major}</span>
-            <span>{post.author.year}</span>
+            {post.author.major ? <span>{post.author.major}</span> : null}
+            {post.author.year ? <span>{post.author.year}</span> : null}
           </div>
         </div>
       </aside>
