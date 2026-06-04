@@ -1,14 +1,43 @@
-import { ScaffoldPage } from "@/components/scaffold-page";
+import { PageFrame } from "@/components/page-frame";
+import { StatusBadge } from "@/components/status-badge";
+import { getCurrentUserRecommendationFeed } from "@/features/recommendations/server/service";
 
-export default function RecommendationsPage() {
+export const dynamic = "force-dynamic";
+
+function RecommendationsEmptyState({ hasEnoughSignals }: { hasEnoughSignals: boolean }) {
   return (
-    <ScaffoldPage
-      route="/recommendations"
-      title="推荐档案列表"
-      summary="推荐页是 AI 与产品价值最直接的交汇处。第一轮需要先把推荐卡片、解释区和请求操作的容器做稳。"
-      owner="AI"
-      focus={["推荐卡片布局", "解释摘要与对话开场建议", "请求连接与忽略操作状态"]}
-      sharedContracts={["Recommendation DTO", "LLM explanation output schema", "dismiss/request 状态流转"]}
-    />
+    <div className="space-y-3 border border-dashed border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-5">
+      <p className="text-sm leading-7 text-[var(--color-muted)]">
+        No recommendations are ready yet. The next slice can connect structured profile and post signals into this
+        feed.
+      </p>
+      {!hasEnoughSignals ? (
+        <p className="text-xs leading-6 text-[var(--color-muted)]">
+          Recommendation generation is waiting for enough academic signals from profiles, posts, modules, and interests.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+export default async function RecommendationsPage() {
+  const feed = await getCurrentUserRecommendationFeed();
+
+  return (
+    <PageFrame
+      eyebrow="Recommendations"
+      title="Recommended Connections"
+      description="Explainable academic connection recommendations generated from user-confirmed profile and post signals."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <StatusBadge tone="ready">requires completed profile</StatusBadge>
+        <StatusBadge>{feed.items.length} recommendations</StatusBadge>
+        <StatusBadge tone={feed.hasEnoughSignals ? "ready" : "caution"}>
+          {feed.hasEnoughSignals ? "signals ready" : "signals pending"}
+        </StatusBadge>
+      </div>
+
+      {feed.items.length === 0 ? <RecommendationsEmptyState hasEnoughSignals={feed.hasEnoughSignals} /> : null}
+    </PageFrame>
   );
 }
