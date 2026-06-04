@@ -140,6 +140,8 @@ recommendedUserId
 nickname
 major
 year
+profileVisibility
+canRequestConnect
 profileSummary
 sharedSignals
 complementarySignals
@@ -147,6 +149,8 @@ explanationSummary
 conversationStarter
 status
 ```
+
+推荐卡的 profile 字段必须遵守 `profile.visibility`。`campus` 或未来明确开放的 `public` profile 可以展示 `recommendedUserId`、`nickname`、`major`、`year` 和 `profileSummary`，并可设置 `canRequestConnect: true`。`private` profile 不得形成可操作的真实推荐卡；如果系统需要保留一条脱敏 DTO 作为占位或审计提示，必须使用 `recommendedUserId: null`、`nickname: "Private profile"`、`major: null`、`year: null`、`profileSummary: null`、`canRequestConnect: false`、`sharedSignals: []`、`complementarySignals: []`、`conversationStarter: null`，并使用固定隐藏说明，不得泄露可识别档案字段、推荐信号或连接入口。
 
 前端不展示精确分数。后端保存 `scoreSummary` 和 `signalSnapshot`，用于调试和审计。用户操作只能是忽略或请求连接；请求连接成功后，推荐状态更新为 `requested`。
 
