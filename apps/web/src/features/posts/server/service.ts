@@ -54,13 +54,42 @@ export type CampusFeedOptions = {
 };
 
 export function parseCreatePostInput(input: unknown): CreatePostInput {
-  const parsedInput = createPostInputSchema.safeParse(input);
+  const parsedInput = createPostInputSchema.safeParse(isFormData(input) ? normalizeCreatePostFormData(input) : input);
 
   if (!parsedInput.success) {
     throw new CreatePostError("Post input is invalid.", "POST_INPUT_INVALID");
   }
 
   return parsedInput.data;
+}
+
+function isFormData(input: unknown): input is FormData {
+  return typeof FormData !== "undefined" && input instanceof FormData;
+}
+
+function getFormText(formData: FormData, name: string) {
+  const value = formData.get(name);
+
+  return typeof value === "string" ? value : "";
+}
+
+export function splitPostFormList(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export function normalizeCreatePostFormData(formData: FormData) {
+  return {
+    body: getFormText(formData, "body"),
+    modules: splitPostFormList(getFormText(formData, "modules")),
+    status: getFormText(formData, "status") || "draft",
+    tags: splitPostFormList(getFormText(formData, "tags")),
+    title: getFormText(formData, "title"),
+    type: getFormText(formData, "type") || "question",
+    visibility: getFormText(formData, "visibility") || "campus",
+  };
 }
 
 export function getCampusFeedPageSize(limit = 20) {

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { createCurrentUserPost } from "@/features/posts/server/service";
 
@@ -10,5 +11,5 @@ export async function createPostAction(input: unknown) {
   revalidatePath("/feed");
   revalidatePath("/posts/new");
 
-  return result;
+  redirect(result.nextRoute);
 }

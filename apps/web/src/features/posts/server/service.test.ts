@@ -5,7 +5,9 @@ import {
   buildCampusFeedItem,
   CreatePostError,
   getCampusFeedPageSize,
+  normalizeCreatePostFormData,
   parseCreatePostInput,
+  splitPostFormList,
 } from "@/features/posts/server/service";
 
 const validInput = {
@@ -43,6 +45,33 @@ describe("post create service", () => {
         type: "announcement",
       }),
     ).toThrow(CreatePostError);
+  });
+
+  it("normalizes server action FormData into create post input", () => {
+    const formData = new FormData();
+    formData.set("body", validInput.body);
+    formData.set("modules", "COMP1048, MATH1038, ");
+    formData.set("status", "published");
+    formData.set("tags", "typescript, coursework");
+    formData.set("title", validInput.title);
+    formData.set("type", "resource");
+    formData.set("visibility", "campus");
+
+    expect(normalizeCreatePostFormData(formData)).toEqual({
+      ...validInput,
+      modules: ["COMP1048", "MATH1038"],
+      tags: ["typescript", "coursework"],
+      type: "resource",
+    });
+    expect(parseCreatePostInput(formData)).toMatchObject({
+      modules: ["COMP1048", "MATH1038"],
+      tags: ["typescript", "coursework"],
+      type: "resource",
+    });
+  });
+
+  it("splits comma-separated post metadata fields", () => {
+    expect(splitPostFormList(" COMP1048, , MATH1038 ")).toEqual(["COMP1048", "MATH1038"]);
   });
 });
 
