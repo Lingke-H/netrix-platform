@@ -18,7 +18,9 @@ import {
   type OpenAiJsonUsage,
 } from "@/server/ai/provider";
 import {
+  type Recommendation,
   type RecommendationCandidateProfile,
+  recommendationSchema,
   recommendationCandidateProfileSchema,
 } from "@/features/recommendations/schemas";
 import type { RecommendationFeedData } from "@/features/recommendations/types";
@@ -111,6 +113,18 @@ export type RecommendationExplanationGenerationResult =
       provider: "mock";
       rawResponseId: string | null;
       usage: OpenAiJsonUsage;
+    };
+
+export type RecommendationCardBuildResult =
+  | {
+      error: null;
+      item: Recommendation;
+      ok: true;
+    }
+  | {
+      error: RecommendationExplanationGenerationResult;
+      item: null;
+      ok: false;
     };
 
 const recommendationScoringWeights = {
@@ -367,6 +381,71 @@ export async function generateRecommendationExplanationWithMockProvider(
   };
 }
 
+function buildCandidateProfileSummary(candidate: RecommendationCandidateProfile) {
+  const summaryParts = [
+    candidate.modules.length > 0 ? `Modules: ${candidate.modules.slice(0, 3).join(", ")}` : null,
+    candidate.interests.length > 0 ? `Interests: ${candidate.interests.slice(0, 3).join(", ")}` : null,
+    candidate.skills.length > 0 ? `Skills: ${candidate.skills.slice(0, 3).join(", ")}` : null,
+  ].filter((part): part is string => part !== null);
+
+  return (summaryParts.join(". ") || "Campus-visible academic profile.").slice(0, 280);
+}
+
+function buildMockRecommendationExplanationOutput(scoredCandidate: ScoredRecommendationCandidate) {
+  const sharedSignals = scoredCandidate.sharedSignals.slice(0, 6);
+  const complementarySignals = scoredCandidate.complementarySignals.slice(0, 6);
+  const strongestSharedSignal = sharedSignals[0] ?? "related academic interests";
+  const strongestComplementarySignal = complementarySignals[0] ?? "compatible study goals";
+
+  return {
+    complementarySignals,
+    conversationStarter: `Ask ${scoredCandidate.candidate.nickname} about ${strongestSharedSignal}.`,
+    explanationSummary: `${scoredCandidate.candidate.nickname} is recommended because of ${strongestSharedSignal} and ${strongestComplementarySignal}.`,
+    sharedSignals,
+  };
+}
+
+export async function buildRecommendationCardFromScoredCandidate(
+  viewerProfile: RecommendationScoringProfile,
+  scoredCandidate: ScoredRecommendationCandidate,
+): Promise<RecommendationCardBuildResult> {
+  const explanationResult = await generateRecommendationExplanationWithMockProvider(viewerProfile, scoredCandidate, {
+    mockOutput: buildMockRecommendationExplanationOutput(scoredCandidate),
+  });
+
+  if (!explanationResult.ok) {
+    return {
+      error: explanationResult,
+      item: null,
+      ok: false,
+    };
+  }
+
+  const { candidate } = scoredCandidate;
+  const item = recommendationSchema.parse({
+    canRequestConnect: true,
+    complementarySignals: explanationResult.explanation.complementarySignals,
+    conversationStarter: explanationResult.explanation.conversationStarter,
+    explanationSummary: explanationResult.explanation.explanationSummary,
+    generatedByJobId: null,
+    major: candidate.major,
+    nickname: candidate.nickname,
+    profileSummary: buildCandidateProfileSummary(candidate),
+    profileVisibility: candidate.visibility,
+    recommendationId: candidate.userId,
+    recommendedUserId: candidate.userId,
+    sharedSignals: explanationResult.explanation.sharedSignals,
+    status: "active",
+    year: candidate.year,
+  });
+
+  return {
+    error: null,
+    item,
+    ok: true,
+  };
+}
+
 export async function listCampusVisibleRecommendationCandidates(
   db: DbClient,
   viewerUserId: string,
@@ -438,4 +517,27 @@ export async function getCurrentUserScoredRecommendationCandidates(
   const candidates = await listCampusVisibleRecommendationCandidates(db, gate.session.userId, options);
 
   return scoreRecommendationCandidates(profile, candidates);
+}
+
+export async function getCurrentUserRecommendationCards(
+  options: RecommendationCandidateOptions = {},
+): Promise<RecommendationFeedData> {
+  const gate = await requireCompletedAcademicProfile();
+  const db = createDb();
+  const profile = await getAcademicProfileForUser(db, gate.session.userId);
+
+  if (!profile) {
+    return buildEmptyRecommendationFeedData();
+  }
+
+  const candidates = await listCampusVisibleRecommendationCandidates(db, gate.session.userId, options);
+  const scoredCandidates = scoreRecommendationCandidates(profile, candidates);
+  const buildResults = await Promise.all(
+    scoredCandidates.map((scoredCandidate) => buildRecommendationCardFromScoredCandidate(profile, scoredCandidate)),
+  );
+
+  return {
+    hasEnoughSignals: scoredCandidates.length > 0,
+    items: buildResults.flatMap((result) => (result.ok ? [result.item] : [])),
+  };
 }

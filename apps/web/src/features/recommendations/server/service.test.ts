@@ -25,9 +25,11 @@ vi.mock("@/server/db/client", () => ({
 import {
   buildEmptyRecommendationFeedData,
   buildRecommendationCandidateProfile,
+  buildRecommendationCardFromScoredCandidate,
   buildRecommendationExplanationInput,
   buildRecommendationExplanationPromptPayload,
   generateRecommendationExplanationWithMockProvider,
+  getCurrentUserRecommendationCards,
   getCurrentUserRecommendationCandidates,
   getCurrentUserRecommendationFeed,
   getCurrentUserScoredRecommendationCandidates,
@@ -436,6 +438,43 @@ describe("recommendation read service", () => {
     });
   });
 
+  it("builds recommendation card DTOs with mock explanation fields", async () => {
+    const scoredCandidate = scoreRecommendationCandidate(
+      viewerScoringProfile,
+      buildRecommendationCandidateProfile(candidateRow),
+    );
+
+    await expect(buildRecommendationCardFromScoredCandidate(viewerScoringProfile, scoredCandidate)).resolves.toEqual({
+      error: null,
+      item: expect.objectContaining({
+        canRequestConnect: true,
+        complementarySignals: ["Candidate can help with: typescript debugging"],
+        conversationStarter: "Ask TypeScript Builder about Shared module: COMP1048.",
+        explanationSummary:
+          "TypeScript Builder is recommended because of Shared module: COMP1048 and Candidate can help with: typescript debugging.",
+        generatedByJobId: null,
+        major: "computer-science",
+        nickname: "TypeScript Builder",
+        profileSummary: "Modules: COMP1048. Interests: web apps. Skills: react",
+        profileVisibility: "campus",
+        recommendationId: "44444444-4444-4444-8444-444444444444",
+        recommendedUserId: "44444444-4444-4444-8444-444444444444",
+        sharedSignals: [
+          "Shared module: COMP1048",
+          "Shared interest: web apps",
+          "Shared skill: react",
+          "Shared collaboration preference: pair study",
+        ],
+        status: "active",
+        year: "year-2",
+      }),
+      ok: true,
+    });
+    const result = await buildRecommendationCardFromScoredCandidate(viewerScoringProfile, scoredCandidate);
+
+    expect(result.ok ? recommendationSchema.parse(result.item) : null).toEqual(result.ok ? result.item : null);
+  });
+
   it("requires a completed academic profile before reading recommendations", async () => {
     requireCompletedAcademicProfileMock.mockResolvedValue({
       canCreatePost: true,
@@ -528,6 +567,51 @@ describe("recommendation read service", () => {
         score: 12,
       }),
     ]);
+    expect(requireCompletedAcademicProfileMock).toHaveBeenCalledOnce();
+    expect(createDbMock).toHaveBeenCalledOnce();
+    expect(getAcademicProfileForUserMock).toHaveBeenCalledWith(db, currentUserId);
+    expect(db.select).toHaveBeenCalledOnce();
+    expect(query.limit).toHaveBeenCalledWith(10);
+    expect(db).not.toHaveProperty("insert");
+  });
+
+  it("composes current user recommendation cards with mock explanations without writing recommendation rows", async () => {
+    const { db, query } = createCandidateDbMock([candidateRow]);
+
+    createDbMock.mockReturnValue(db);
+    getAcademicProfileForUserMock.mockResolvedValue(currentProfile);
+    requireCompletedAcademicProfileMock.mockResolvedValue({
+      canCreatePost: true,
+      canViewOwnProfile: true,
+      nextRoute: "/feed",
+      profile: {
+        completionStatus: "basic_complete",
+        id: "11111111-1111-4111-8111-111111111111",
+      },
+      session: {
+        authUserId: "22222222-2222-4222-8222-222222222222",
+        email: "student@nottingham.edu.cn",
+        emailDomain: "nottingham.edu.cn",
+        emailVerified: true,
+        role: "student",
+        userId: currentUserId,
+        verifiedAt: "2026-01-02T03:04:05.000Z",
+      },
+      state: "profile_ready",
+    });
+
+    await expect(getCurrentUserRecommendationCards({ limit: 10 })).resolves.toEqual({
+      hasEnoughSignals: true,
+      items: [
+        expect.objectContaining({
+          conversationStarter: "Ask TypeScript Builder about Shared module: COMP1048.",
+          explanationSummary:
+            "TypeScript Builder is recommended because of Shared module: COMP1048 and Candidate can help with: typescript debugging.",
+          profileVisibility: "campus",
+          recommendedUserId: "44444444-4444-4444-8444-444444444444",
+        }),
+      ],
+    });
     expect(requireCompletedAcademicProfileMock).toHaveBeenCalledOnce();
     expect(createDbMock).toHaveBeenCalledOnce();
     expect(getAcademicProfileForUserMock).toHaveBeenCalledWith(db, currentUserId);
