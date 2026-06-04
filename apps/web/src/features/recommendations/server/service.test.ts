@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { recommendationSchema } from "@/features/recommendations/schemas";
+import { recommendationFeedFixture } from "@/features/recommendations/test-fixtures";
+
 const requireCompletedAcademicProfileMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/server/auth/onboarding-gate", () => ({
@@ -18,6 +21,26 @@ describe("recommendation read service", () => {
       hasEnoughSignals: false,
       items: [],
     });
+  });
+
+  it("keeps the future service feed fixture compatible with visible and private recommendation DTOs", () => {
+    expect(recommendationFeedFixture.hasEnoughSignals).toBe(true);
+    expect(recommendationFeedFixture.items.map((item) => recommendationSchema.parse(item))).toEqual(
+      recommendationFeedFixture.items,
+    );
+    expect(recommendationFeedFixture.items).toEqual([
+      expect.objectContaining({
+        canRequestConnect: true,
+        profileVisibility: "campus",
+        recommendedUserId: expect.any(String),
+      }),
+      expect.objectContaining({
+        canRequestConnect: false,
+        profileSummary: null,
+        profileVisibility: "private",
+        recommendedUserId: null,
+      }),
+    ]);
   });
 
   it("requires a completed academic profile before reading recommendations", async () => {
