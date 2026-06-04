@@ -2,13 +2,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { recommendationSchema } from "@/features/recommendations/schemas";
 import { recommendationFeedFixture } from "@/features/recommendations/test-fixtures";
+import type { AcademicProfile } from "@/features/profile/schemas";
 import type { DbClient } from "@/server/db/client";
 
 const requireCompletedAcademicProfileMock = vi.hoisted(() => vi.fn());
 const createDbMock = vi.hoisted(() => vi.fn());
+const getAcademicProfileForUserMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/server/auth/onboarding-gate", () => ({
   requireCompletedAcademicProfile: requireCompletedAcademicProfileMock,
+}));
+
+vi.mock("@/features/profile/server/service", () => ({
+  getAcademicProfileForUser: getAcademicProfileForUserMock,
 }));
 
 vi.mock("@/server/db/client", () => ({
@@ -20,6 +26,7 @@ import {
   buildRecommendationCandidateProfile,
   getCurrentUserRecommendationCandidates,
   getCurrentUserRecommendationFeed,
+  getCurrentUserScoredRecommendationCandidates,
   getRecommendationCandidateLimit,
   listCampusVisibleRecommendationCandidates,
   scoreRecommendationCandidate,
@@ -55,6 +62,18 @@ const viewerScoringProfile: RecommendationScoringProfile = {
   skills: ["react", "typescript"],
 };
 
+const currentProfile = {
+  ...viewerScoringProfile,
+  completionStatus: "basic_complete",
+  createdAt: "2026-01-01T00:00:00.000Z",
+  major: "computer-science",
+  nickname: "Current Builder",
+  updatedAt: "2026-01-02T03:04:05.000Z",
+  userId: currentUserId,
+  visibility: "campus",
+  year: "year-2",
+} satisfies AcademicProfile;
+
 function createCandidateDbMock(rows: unknown[]) {
   const query = {
     from: vi.fn(() => query),
@@ -73,6 +92,7 @@ describe("recommendation read service", () => {
   beforeEach(() => {
     requireCompletedAcademicProfileMock.mockReset();
     createDbMock.mockReset();
+    getAcademicProfileForUserMock.mockReset();
   });
 
   it("builds the initial empty recommendation feed DTO", () => {
@@ -263,5 +283,75 @@ describe("recommendation read service", () => {
     expect(requireCompletedAcademicProfileMock).toHaveBeenCalledOnce();
     expect(createDbMock).toHaveBeenCalledOnce();
     expect(query.limit).toHaveBeenCalledWith(1);
+  });
+
+  it("composes the current profile, candidate read, and scoring without writing recommendation rows", async () => {
+    const { db, query } = createCandidateDbMock([candidateRow]);
+
+    createDbMock.mockReturnValue(db);
+    getAcademicProfileForUserMock.mockResolvedValue(currentProfile);
+    requireCompletedAcademicProfileMock.mockResolvedValue({
+      canCreatePost: true,
+      canViewOwnProfile: true,
+      nextRoute: "/feed",
+      profile: {
+        completionStatus: "basic_complete",
+        id: "11111111-1111-4111-8111-111111111111",
+      },
+      session: {
+        authUserId: "22222222-2222-4222-8222-222222222222",
+        email: "student@nottingham.edu.cn",
+        emailDomain: "nottingham.edu.cn",
+        emailVerified: true,
+        role: "student",
+        userId: currentUserId,
+        verifiedAt: "2026-01-02T03:04:05.000Z",
+      },
+      state: "profile_ready",
+    });
+
+    await expect(getCurrentUserScoredRecommendationCandidates({ limit: 10 })).resolves.toEqual([
+      expect.objectContaining({
+        candidate: buildRecommendationCandidateProfile(candidateRow),
+        complementarySignals: ["Candidate can help with: typescript debugging"],
+        score: 12,
+      }),
+    ]);
+    expect(requireCompletedAcademicProfileMock).toHaveBeenCalledOnce();
+    expect(createDbMock).toHaveBeenCalledOnce();
+    expect(getAcademicProfileForUserMock).toHaveBeenCalledWith(db, currentUserId);
+    expect(db.select).toHaveBeenCalledOnce();
+    expect(query.limit).toHaveBeenCalledWith(10);
+    expect(db).not.toHaveProperty("insert");
+  });
+
+  it("returns no scored candidates if the current profile cannot be loaded after the gate", async () => {
+    const { db } = createCandidateDbMock([candidateRow]);
+
+    createDbMock.mockReturnValue(db);
+    getAcademicProfileForUserMock.mockResolvedValue(null);
+    requireCompletedAcademicProfileMock.mockResolvedValue({
+      canCreatePost: true,
+      canViewOwnProfile: true,
+      nextRoute: "/feed",
+      profile: {
+        completionStatus: "basic_complete",
+        id: "11111111-1111-4111-8111-111111111111",
+      },
+      session: {
+        authUserId: "22222222-2222-4222-8222-222222222222",
+        email: "student@nottingham.edu.cn",
+        emailDomain: "nottingham.edu.cn",
+        emailVerified: true,
+        role: "student",
+        userId: currentUserId,
+        verifiedAt: "2026-01-02T03:04:05.000Z",
+      },
+      state: "profile_ready",
+    });
+
+    await expect(getCurrentUserScoredRecommendationCandidates()).resolves.toEqual([]);
+    expect(getAcademicProfileForUserMock).toHaveBeenCalledWith(db, currentUserId);
+    expect(db.select).not.toHaveBeenCalled();
   });
 });

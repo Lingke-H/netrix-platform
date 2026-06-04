@@ -1,5 +1,6 @@
 import { and, desc, eq, inArray, ne } from "drizzle-orm";
 
+import { getAcademicProfileForUser } from "@/features/profile/server/service";
 import {
   type RecommendationCandidateProfile,
   recommendationCandidateProfileSchema,
@@ -244,4 +245,20 @@ export async function getCurrentUserRecommendationCandidates(
   const db = createDb();
 
   return listCampusVisibleRecommendationCandidates(db, gate.session.userId, options);
+}
+
+export async function getCurrentUserScoredRecommendationCandidates(
+  options: RecommendationCandidateOptions = {},
+): Promise<ScoredRecommendationCandidate[]> {
+  const gate = await requireCompletedAcademicProfile();
+  const db = createDb();
+  const profile = await getAcademicProfileForUser(db, gate.session.userId);
+
+  if (!profile) {
+    return [];
+  }
+
+  const candidates = await listCampusVisibleRecommendationCandidates(db, gate.session.userId, options);
+
+  return scoreRecommendationCandidates(profile, candidates);
 }
