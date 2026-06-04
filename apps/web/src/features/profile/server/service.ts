@@ -59,7 +59,9 @@ export const academicProfileUpsertInputSchema = academicProfileFormInputSchema.o
 });
 
 export function parseAcademicProfileUpsertInput(input: unknown, userId: string): AcademicProfileFormInput {
-  const parsedInput = academicProfileUpsertInputSchema.safeParse(input);
+  const parsedInput = academicProfileUpsertInputSchema.safeParse(
+    isFormData(input) ? normalizeAcademicProfileFormData(input) : input,
+  );
 
   if (!parsedInput.success) {
     throw new AcademicProfileUpsertError("Academic profile input is invalid.", "PROFILE_INPUT_INVALID");
@@ -76,6 +78,38 @@ export function parseAcademicProfileUpsertInput(input: unknown, userId: string):
   }
 
   return trustedInput.data;
+}
+
+function isFormData(input: unknown): input is FormData {
+  return typeof FormData !== "undefined" && input instanceof FormData;
+}
+
+function getFormText(formData: FormData, name: string) {
+  const value = formData.get(name);
+
+  return typeof value === "string" ? value : "";
+}
+
+export function splitAcademicProfileFormList(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export function normalizeAcademicProfileFormData(formData: FormData) {
+  return {
+    collaborationPreference: splitAcademicProfileFormList(getFormText(formData, "collaborationPreference")),
+    helpNeeded: splitAcademicProfileFormList(getFormText(formData, "helpNeeded")),
+    helpOffered: splitAcademicProfileFormList(getFormText(formData, "helpOffered")),
+    interests: splitAcademicProfileFormList(getFormText(formData, "interests")),
+    major: getFormText(formData, "major") || "eee",
+    modules: splitAcademicProfileFormList(getFormText(formData, "modules")),
+    nickname: getFormText(formData, "nickname"),
+    skills: splitAcademicProfileFormList(getFormText(formData, "skills")),
+    visibility: getFormText(formData, "visibility") || "campus",
+    year: getFormText(formData, "year") || "year-2",
+  };
 }
 
 export function buildAcademicProfileDto(row: AcademicProfileDtoRow): AcademicProfile {

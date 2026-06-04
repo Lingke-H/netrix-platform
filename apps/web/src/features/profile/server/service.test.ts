@@ -5,7 +5,9 @@ import {
   AcademicProfileUpsertError,
   buildAcademicProfileDto,
   buildProfileRouteState,
+  normalizeAcademicProfileFormData,
   parseAcademicProfileUpsertInput,
+  splitAcademicProfileFormList,
 } from "@/features/profile/server/service";
 import type { OnboardingGate } from "@/server/auth/onboarding-gate";
 
@@ -25,6 +27,35 @@ const validInput = {
 } satisfies AcademicProfileUpsertInput;
 
 describe("academic profile upsert service", () => {
+  it("normalizes comma-separated profile form lists", () => {
+    expect(splitAcademicProfileFormList(" ELEC2043, COMP1048,, signals ")).toEqual([
+      "ELEC2043",
+      "COMP1048",
+      "signals",
+    ]);
+  });
+
+  it("normalizes profile FormData into upsert input", () => {
+    const formData = new FormData();
+
+    formData.set("collaborationPreference", "pair study, project teammate");
+    formData.set("helpNeeded", "signals");
+    formData.set("helpOffered", "typescript");
+    formData.set("interests", "web apps");
+    formData.set("major", "computer-science");
+    formData.set("modules", "COMP1048, ELEC2043");
+    formData.set("nickname", "TypeScript Builder");
+    formData.set("skills", "react");
+    formData.set("visibility", "campus");
+    formData.set("year", "year-2");
+
+    expect(normalizeAcademicProfileFormData(formData)).toEqual({
+      ...validInput,
+      collaborationPreference: ["pair study", "project teammate"],
+      modules: ["COMP1048", "ELEC2043"],
+    });
+  });
+
   it("builds trusted profile input and forces the current user completion status", () => {
     expect(
       parseAcademicProfileUpsertInput(
@@ -36,6 +67,20 @@ describe("academic profile upsert service", () => {
         userId,
       ),
     ).toEqual({
+      ...validInput,
+      completionStatus: "basic_complete",
+      userId,
+    });
+  });
+
+  it("accepts FormData and forces the current user completion status", () => {
+    const formData = new FormData();
+
+    Object.entries(validInput).forEach(([key, value]) => {
+      formData.set(key, Array.isArray(value) ? value.join(", ") : value);
+    });
+
+    expect(parseAcademicProfileUpsertInput(formData, userId)).toEqual({
       ...validInput,
       completionStatus: "basic_complete",
       userId,
