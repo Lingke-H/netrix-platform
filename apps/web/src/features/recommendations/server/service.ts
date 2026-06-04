@@ -2,6 +2,10 @@ import { and, desc, eq, inArray, ne } from "drizzle-orm";
 
 import { getAcademicProfileForUser } from "@/features/profile/server/service";
 import {
+  recommendationExplanationInputSchema,
+  type RecommendationExplanationInput,
+} from "@/server/ai/schemas/recommendation-explanation";
+import {
   type RecommendationCandidateProfile,
   recommendationCandidateProfileSchema,
 } from "@/features/recommendations/schemas";
@@ -188,6 +192,43 @@ export function scoreRecommendationCandidates(
 
       return right.candidate.updatedAt.localeCompare(left.candidate.updatedAt);
     });
+}
+
+export function buildRecommendationExplanationInput(
+  viewerProfile: RecommendationScoringProfile,
+  scoredCandidate: ScoredRecommendationCandidate,
+): RecommendationExplanationInput {
+  const { candidate } = scoredCandidate;
+
+  return recommendationExplanationInputSchema.parse({
+    candidateProfile: {
+      collaborationPreference: candidate.collaborationPreference,
+      helpNeeded: candidate.helpNeeded,
+      helpOffered: candidate.helpOffered,
+      interests: candidate.interests,
+      major: candidate.major,
+      modules: candidate.modules,
+      nickname: candidate.nickname,
+      skills: candidate.skills,
+      userId: candidate.userId,
+      visibility: candidate.visibility,
+      year: candidate.year,
+    },
+    ruleScore: {
+      complementarySignals: scoredCandidate.complementarySignals,
+      score: scoredCandidate.score,
+      scoreSummary: scoredCandidate.scoreSummary,
+      sharedSignals: scoredCandidate.sharedSignals,
+    },
+    viewerProfile: {
+      collaborationPreference: viewerProfile.collaborationPreference,
+      helpNeeded: viewerProfile.helpNeeded,
+      helpOffered: viewerProfile.helpOffered,
+      interests: viewerProfile.interests,
+      modules: viewerProfile.modules,
+      skills: viewerProfile.skills,
+    },
+  });
 }
 
 export async function listCampusVisibleRecommendationCandidates(

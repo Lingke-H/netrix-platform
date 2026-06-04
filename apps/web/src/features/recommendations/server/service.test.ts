@@ -4,6 +4,7 @@ import { recommendationSchema } from "@/features/recommendations/schemas";
 import { recommendationFeedFixture } from "@/features/recommendations/test-fixtures";
 import type { AcademicProfile } from "@/features/profile/schemas";
 import type { DbClient } from "@/server/db/client";
+import { recommendationExplanationInputSchema } from "@/server/ai/schemas/recommendation-explanation";
 
 const requireCompletedAcademicProfileMock = vi.hoisted(() => vi.fn());
 const createDbMock = vi.hoisted(() => vi.fn());
@@ -24,6 +25,7 @@ vi.mock("@/server/db/client", () => ({
 import {
   buildEmptyRecommendationFeedData,
   buildRecommendationCandidateProfile,
+  buildRecommendationExplanationInput,
   getCurrentUserRecommendationCandidates,
   getCurrentUserRecommendationFeed,
   getCurrentUserScoredRecommendationCandidates,
@@ -223,6 +225,69 @@ describe("recommendation read service", () => {
         score: 12,
       }),
     ]);
+  });
+
+  it("builds recommendation explanation prompt input from scored candidates without calling an LLM", () => {
+    const scoredCandidate = scoreRecommendationCandidate(
+      viewerScoringProfile,
+      buildRecommendationCandidateProfile(candidateRow),
+    );
+
+    expect(buildRecommendationExplanationInput(viewerScoringProfile, scoredCandidate)).toEqual({
+      candidateProfile: {
+        collaborationPreference: ["pair study"],
+        helpNeeded: ["signals"],
+        helpOffered: ["typescript debugging"],
+        interests: ["web apps"],
+        major: "computer-science",
+        modules: ["COMP1048"],
+        nickname: "TypeScript Builder",
+        skills: ["react"],
+        userId: "44444444-4444-4444-8444-444444444444",
+        visibility: "campus",
+        year: "year-2",
+      },
+      ruleScore: {
+        complementarySignals: ["Candidate can help with: typescript debugging"],
+        score: 12,
+        scoreSummary: {
+          collaborationPreferenceOverlap: 1,
+          helpComplementarity: 4,
+          interestOverlap: 2,
+          moduleOverlap: 3,
+          skillOverlap: 2,
+          total: 12,
+        },
+        sharedSignals: [
+          "Shared module: COMP1048",
+          "Shared interest: web apps",
+          "Shared skill: react",
+          "Shared collaboration preference: pair study",
+        ],
+      },
+      viewerProfile: viewerScoringProfile,
+    });
+    expect(recommendationExplanationInputSchema.parse(buildRecommendationExplanationInput(viewerScoringProfile, scoredCandidate))).toEqual(
+      buildRecommendationExplanationInput(viewerScoringProfile, scoredCandidate),
+    );
+  });
+
+  it("rejects non-campus prompt input candidates before LLM explanation generation", () => {
+    const scoredCandidate = scoreRecommendationCandidate(
+      viewerScoringProfile,
+      buildRecommendationCandidateProfile(candidateRow),
+    );
+    const input = buildRecommendationExplanationInput(viewerScoringProfile, scoredCandidate);
+
+    expect(() =>
+      recommendationExplanationInputSchema.parse({
+        ...input,
+        candidateProfile: {
+          ...input.candidateProfile,
+          visibility: "private",
+        },
+      }),
+    ).toThrow();
   });
 
   it("requires a completed academic profile before reading recommendations", async () => {
