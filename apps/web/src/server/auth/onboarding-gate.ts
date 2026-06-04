@@ -42,6 +42,10 @@ export class OnboardingGateError extends Error {
   }
 }
 
+export function isAcademicProfileRequiredError(error: unknown) {
+  return error instanceof OnboardingGateError && error.code === "ACADEMIC_PROFILE_REQUIRED";
+}
+
 export function isAcademicProfileComplete(completionStatus: ProfileCompletionStatus) {
   return completionStatus === "basic_complete" || completionStatus === "recommendation_ready";
 }

@@ -1,21 +1,52 @@
+import Link from "next/link";
 import { Send } from "lucide-react";
 
 import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
 import { createPostAction } from "@/features/posts/server/actions";
+import { getOnboardingGate } from "@/server/auth/onboarding-gate";
+
+export const dynamic = "force-dynamic";
 
 const inputClass =
   "w-full border border-[var(--color-line)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-accent)]";
 
 const labelClass = "space-y-2 text-sm font-medium text-[var(--color-ink)]";
 
-export default function NewPostPage() {
+function ProfileRequiredPrompt({ completionStatus }: { completionStatus: string }) {
+  return (
+    <div className="space-y-4 border border-dashed border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-5">
+      <p className="text-sm leading-7 text-[var(--color-muted)]">
+        Complete your academic profile before creating a campus post. This keeps posts connected to verified academic
+        signals and unlocks the posting flow.
+      </p>
+      <div className="flex flex-wrap items-center gap-3">
+        <StatusBadge tone="caution">profile required</StatusBadge>
+        <StatusBadge>{completionStatus}</StatusBadge>
+      </div>
+      <Link
+        href="/onboarding?reason=profile-required"
+        className="inline-flex bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[rgba(29,107,87,0.9)]"
+      >
+        Complete profile
+      </Link>
+    </div>
+  );
+}
+
+export default async function NewPostPage() {
+  const gate = await getOnboardingGate();
+  const completionStatus = gate.profile?.completionStatus ?? "incomplete";
+
   return (
     <PageFrame
       eyebrow="Create post"
       title="New Academic Post"
       description="Create a Q&A, Resource, or Experience post for the campus academic feed."
     >
+      {!gate.canCreatePost ? <ProfileRequiredPrompt completionStatus={completionStatus} /> : null}
+
+      {gate.canCreatePost ? (
       <form action={createPostAction} className="space-y-5">
         <div className="flex flex-wrap items-center gap-3">
           <StatusBadge tone="ready">requires completed profile</StatusBadge>
@@ -81,6 +112,7 @@ export default function NewPostPage() {
           </button>
         </div>
       </form>
+      ) : null}
     </PageFrame>
   );
 }

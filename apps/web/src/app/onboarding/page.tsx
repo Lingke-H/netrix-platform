@@ -13,6 +13,12 @@ const inputClass =
 
 const labelClass = "space-y-2 text-sm font-medium text-[var(--color-ink)]";
 
+type OnboardingPageProps = {
+  searchParams: Promise<{
+    reason?: string;
+  }>;
+};
+
 const majorOptions = [
   ["eee", "EEE"],
   ["computer-science", "Computer Science"],
@@ -159,8 +165,22 @@ function AcademicProfileForm({ profile }: { profile: AcademicProfile | null }) {
   );
 }
 
-export default async function OnboardingPage() {
+function ProfileRequiredNotice() {
+  return (
+    <div className="space-y-2 border border-[var(--color-line)] bg-[rgba(181,106,30,0.1)] p-4">
+      <StatusBadge tone="caution">profile required</StatusBadge>
+      <p className="text-sm leading-7 text-[var(--color-muted)]">
+        Complete this academic profile before creating a post. After saving, you will return to the campus feed with
+        posting access unlocked.
+      </p>
+    </div>
+  );
+}
+
+export default async function OnboardingPage({ searchParams }: OnboardingPageProps) {
+  const query = await searchParams;
   const { gate, routeState } = await getCurrentUserProfileData();
+  const showProfileRequiredNotice = query.reason === "profile-required";
 
   return (
     <PageFrame
@@ -173,6 +193,8 @@ export default async function OnboardingPage() {
         <StatusBadge>{routeState.completionStatus}</StatusBadge>
         <StatusBadge>{routeState.visibility}</StatusBadge>
       </div>
+
+      {showProfileRequiredNotice ? <ProfileRequiredNotice /> : null}
 
       <AcademicProfileForm profile={routeState.profile} />
     </PageFrame>

@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildOnboardingGate,
+  isAcademicProfileRequiredError,
   isAcademicProfileComplete,
+  OnboardingGateError,
   type AcademicProfileGateSummary,
 } from "@/server/auth/onboarding-gate";
 import type { CurrentUserSession } from "@/server/auth/session";
@@ -52,5 +54,14 @@ describe("onboarding gate", () => {
       nextRoute: "/feed",
       state: "profile_ready",
     });
+  });
+
+  it("identifies academic-profile-required gate errors", () => {
+    expect(
+      isAcademicProfileRequiredError(
+        new OnboardingGateError("A completed profile is required.", "ACADEMIC_PROFILE_REQUIRED"),
+      ),
+    ).toBe(true);
+    expect(isAcademicProfileRequiredError(new Error("Different error"))).toBe(false);
   });
 });
