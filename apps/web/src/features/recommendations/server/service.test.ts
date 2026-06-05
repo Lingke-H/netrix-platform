@@ -28,6 +28,7 @@ import {
   buildRecommendationCardFromScoredCandidate,
   buildRecommendationExplanationInput,
   buildRecommendationExplanationPromptPayload,
+  buildRecommendationInsertDraft,
   generateRecommendationExplanationWithMockProvider,
   getCurrentUserRecommendationCards,
   getCurrentUserRecommendationCandidates,
@@ -473,6 +474,98 @@ describe("recommendation read service", () => {
     const result = await buildRecommendationCardFromScoredCandidate(viewerScoringProfile, scoredCandidate);
 
     expect(result.ok ? recommendationSchema.parse(result.item) : null).toEqual(result.ok ? result.item : null);
+  });
+
+  it("builds recommendation insert drafts without calling db.insert", async () => {
+    const scoredCandidate = scoreRecommendationCandidate(
+      viewerScoringProfile,
+      buildRecommendationCandidateProfile(candidateRow),
+    );
+    const cardResult = await buildRecommendationCardFromScoredCandidate(viewerScoringProfile, scoredCandidate);
+    const generationResult = await generateRecommendationExplanationWithMockProvider(
+      viewerScoringProfile,
+      scoredCandidate,
+      {
+        mockOutput: {
+          complementarySignals: ["Candidate can help with: typescript debugging"],
+          conversationStarter: "Ask TypeScript Builder about Shared module: COMP1048.",
+          explanationSummary:
+            "TypeScript Builder is recommended because of Shared module: COMP1048 and Candidate can help with: typescript debugging.",
+          sharedSignals: [
+            "Shared module: COMP1048",
+            "Shared interest: web apps",
+            "Shared skill: react",
+            "Shared collaboration preference: pair study",
+          ],
+        },
+        rawResponseId: "mock-recommendation-response-1",
+        usage: {
+          inputTokens: 64,
+          outputTokens: 48,
+        },
+      },
+    );
+    const db = {
+      insert: vi.fn(),
+    };
+
+    if (!cardResult.ok || cardResult.item.profileVisibility !== "campus" || !generationResult.ok) {
+      throw new Error("Expected a persistable recommendation card and successful generation result.");
+    }
+
+    expect(
+      buildRecommendationInsertDraft({
+        card: cardResult.item,
+        generation: generationResult,
+        recipientUserId: currentUserId,
+        scoredCandidate,
+      }),
+    ).toEqual({
+      complementarySignals: ["Candidate can help with: typescript debugging"],
+      conversationStarter: "Ask TypeScript Builder about Shared module: COMP1048.",
+      explanationSummary:
+        "TypeScript Builder is recommended because of Shared module: COMP1048 and Candidate can help with: typescript debugging.",
+      generatedByJobId: null,
+      llmModel: "mock-recommendation-explainer",
+      llmProvider: "mock",
+      llmRawResponseId: "mock-recommendation-response-1",
+      llmUsage: {
+        inputTokens: 64,
+        outputTokens: 48,
+      },
+      promptVersion: "recommendation-explanation.v1",
+      recommendedUserId: "44444444-4444-4444-8444-444444444444",
+      recipientUserId: currentUserId,
+      scoreSummary: {
+        collaborationPreferenceOverlap: 1,
+        helpComplementarity: 4,
+        interestOverlap: 2,
+        moduleOverlap: 3,
+        skillOverlap: 2,
+        total: 12,
+      },
+      sharedSignals: [
+        "Shared module: COMP1048",
+        "Shared interest: web apps",
+        "Shared skill: react",
+        "Shared collaboration preference: pair study",
+      ],
+      signalSnapshot: {
+        candidateUserId: "44444444-4444-4444-8444-444444444444",
+        candidateVisibility: "campus",
+        completionStatus: "basic_complete",
+        helpNeeded: ["signals"],
+        helpOffered: ["typescript debugging"],
+        interests: ["web apps"],
+        modules: ["COMP1048"],
+        profileVisibility: "campus",
+        promptVersion: "recommendation-explanation.v1",
+        skills: ["react"],
+      },
+      status: "active",
+    });
+    expect(cardResult.item.recommendationId).toBe("44444444-4444-4444-8444-444444444444");
+    expect(db.insert).not.toHaveBeenCalled();
   });
 
   it("requires a completed academic profile before reading recommendations", async () => {

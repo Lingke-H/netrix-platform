@@ -26,7 +26,7 @@ import {
 import type { RecommendationFeedData } from "@/features/recommendations/types";
 import { requireCompletedAcademicProfile } from "@/server/auth/onboarding-gate";
 import { createDb, type DbClient } from "@/server/db/client";
-import { academicProfiles } from "@/server/db/schema";
+import { academicProfiles, recommendations } from "@/server/db/schema";
 
 export type RecommendationCandidateProfileRow = {
   collaborationPreference: string[];
@@ -126,6 +126,21 @@ export type RecommendationCardBuildResult =
       item: null;
       ok: false;
     };
+
+type VisibleRecommendationCard = Extract<Recommendation, { profileVisibility: "campus" | "public" }>;
+type SuccessfulRecommendationExplanationGeneration = Extract<
+  RecommendationExplanationGenerationResult,
+  { ok: true }
+>;
+
+export type RecommendationInsertDraft = typeof recommendations.$inferInsert;
+
+export type RecommendationInsertDraftInput = {
+  card: VisibleRecommendationCard;
+  generation: SuccessfulRecommendationExplanationGeneration;
+  recipientUserId: string;
+  scoredCandidate: ScoredRecommendationCandidate;
+};
 
 const recommendationScoringWeights = {
   collaborationPreferenceOverlap: 1,
@@ -443,6 +458,51 @@ export async function buildRecommendationCardFromScoredCandidate(
     error: null,
     item,
     ok: true,
+  };
+}
+
+export function buildRecommendationInsertDraft({
+  card,
+  generation,
+  recipientUserId,
+  scoredCandidate,
+}: RecommendationInsertDraftInput): RecommendationInsertDraft {
+  const { candidate } = scoredCandidate;
+
+  return {
+    complementarySignals: card.complementarySignals,
+    conversationStarter: card.conversationStarter,
+    explanationSummary: card.explanationSummary,
+    generatedByJobId: card.generatedByJobId,
+    llmModel: generation.model,
+    llmProvider: generation.provider,
+    llmRawResponseId: generation.rawResponseId,
+    llmUsage: generation.usage,
+    promptVersion: generation.promptVersion,
+    recommendedUserId: card.recommendedUserId,
+    recipientUserId,
+    scoreSummary: {
+      collaborationPreferenceOverlap: scoredCandidate.scoreSummary.collaborationPreferenceOverlap,
+      helpComplementarity: scoredCandidate.scoreSummary.helpComplementarity,
+      interestOverlap: scoredCandidate.scoreSummary.interestOverlap,
+      moduleOverlap: scoredCandidate.scoreSummary.moduleOverlap,
+      skillOverlap: scoredCandidate.scoreSummary.skillOverlap,
+      total: scoredCandidate.scoreSummary.total,
+    },
+    sharedSignals: card.sharedSignals,
+    signalSnapshot: {
+      candidateUserId: candidate.userId,
+      candidateVisibility: candidate.visibility,
+      completionStatus: candidate.completionStatus,
+      helpNeeded: candidate.helpNeeded,
+      helpOffered: candidate.helpOffered,
+      interests: candidate.interests,
+      modules: candidate.modules,
+      profileVisibility: card.profileVisibility,
+      promptVersion: generation.promptVersion,
+      skills: candidate.skills,
+    },
+    status: card.status,
   };
 }
 
