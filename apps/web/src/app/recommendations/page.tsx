@@ -4,6 +4,7 @@ import { UserRound } from "lucide-react";
 import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
 import type { Major, StudyYear } from "@/features/profile/schemas";
+import { RecommendationEmptyState } from "@/features/recommendations/components";
 import type { Recommendation } from "@/features/recommendations/schemas";
 import { getCurrentUserRecommendationCards } from "@/features/recommendations/server/service";
 
@@ -26,21 +27,6 @@ const studyYearLabels: Record<StudyYear, string> = {
   "year-4": "Year 4",
   postgraduate: "Postgraduate",
 };
-
-function RecommendationsEmptyState() {
-  return (
-    <div className="space-y-3 border border-dashed border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-5">
-      <p className="text-sm leading-7 text-[var(--color-muted)]">
-        No scored recommendation candidates are ready yet. This can happen when there are not enough campus-visible
-        profiles with overlapping academic signals.
-      </p>
-      <p className="text-xs leading-6 text-[var(--color-muted)]">
-        This view currently uses in-memory rule scoring and mock explanation generation. It does not create recommendation
-        rows or call OpenAI.
-      </p>
-    </div>
-  );
-}
 
 function SignalList({ label, items }: { label: string; items: string[] }) {
   if (items.length === 0) {
@@ -128,7 +114,7 @@ export default async function RecommendationsPage() {
       </div>
 
       {recommendationFeed.items.length === 0 ? (
-        <RecommendationsEmptyState />
+        <RecommendationEmptyState />
       ) : (
         <div className="space-y-4">
           {recommendationFeed.items.map((recommendation) => (
