@@ -8,9 +8,25 @@ export type AiJobRecord = {
   status: AiJobStatus;
   promptVersion: string;
   inputSummary: string;
+  outputSummary: string | null;
+  errorMessage: string | null;
   createdAt: string;
+  completedAt: string | null;
 };
 
-export function createAiJobRecord(job: AiJobRecord) {
-  return job;
+export type CreateAiJobInput = Omit<AiJobRecord, "id" | "createdAt" | "completedAt" | "outputSummary" | "errorMessage"> & {
+  outputSummary?: string | null;
+  errorMessage?: string | null;
+  completedAt?: string | null;
+};
+
+export function createAiJobRecord(job: CreateAiJobInput): AiJobRecord {
+  return {
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    completedAt: job.completedAt ?? null,
+    outputSummary: job.outputSummary ?? null,
+    errorMessage: job.errorMessage ?? null,
+    ...job,
+  };
 }
