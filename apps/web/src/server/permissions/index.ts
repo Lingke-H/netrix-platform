@@ -5,6 +5,7 @@ export type PermissionScope =
   | "post:read"
   | "recommendation:read"
   | "recommendation:write"
+  | "connection:read"
   | "connection:request"
   | "connection:respond"
   | "message:read"

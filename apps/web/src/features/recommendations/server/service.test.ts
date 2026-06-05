@@ -88,6 +88,9 @@ function createCandidateDbMock(rows: unknown[]) {
     from: vi.fn(() => query),
     limit: vi.fn(async () => rows),
     orderBy: vi.fn(() => query),
+    then: vi.fn((resolve: (value: unknown[]) => unknown, reject?: (reason: unknown) => unknown) =>
+      Promise.resolve([]).then(resolve, reject),
+    ),
     where: vi.fn(() => query),
   };
   const db = {
@@ -765,7 +768,7 @@ describe("recommendation read service", () => {
     expect(requireCompletedAcademicProfileMock).toHaveBeenCalledOnce();
     expect(createDbMock).toHaveBeenCalledOnce();
     expect(getAcademicProfileForUserMock).toHaveBeenCalledWith(db, currentUserId);
-    expect(db.select).toHaveBeenCalledOnce();
+    expect(db.select).toHaveBeenCalledTimes(3);
     expect(query.limit).toHaveBeenCalledWith(10);
     expect(db).not.toHaveProperty("insert");
   });

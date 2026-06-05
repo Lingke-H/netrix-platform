@@ -34,8 +34,15 @@ export const connectionRequestActionSchema = z.object({
   action: z.enum(["accept", "reject", "cancel"]),
 });
 
+export const createConnectionRequestInputSchema = z.object({
+  recipientId: z.string().uuid(),
+  recommendationId: z.string().uuid(),
+  message: z.string().trim().min(1).max(240).nullable().optional(),
+});
+
 export type ConnectionRequestStatus = z.infer<typeof connectionRequestStatusSchema>;
 export type ConnectionStatus = z.infer<typeof connectionStatusSchema>;
 export type ConnectionRequest = z.infer<typeof connectionRequestSchema>;
 export type Connection = z.infer<typeof connectionSchema>;
 export type ConnectionRequestAction = z.infer<typeof connectionRequestActionSchema>;
+export type CreateConnectionRequestInput = z.infer<typeof createConnectionRequestInputSchema>;
