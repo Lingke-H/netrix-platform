@@ -33,6 +33,7 @@ import {
   getCurrentUserRecommendationCards,
   getCurrentUserRecommendationCandidates,
   getCurrentUserRecommendationFeed,
+  getCurrentUserRecommendationPersistenceDryRun,
   getCurrentUserScoredRecommendationCandidates,
   getRecommendationCandidateLimit,
   listCampusVisibleRecommendationCandidates,
@@ -700,6 +701,62 @@ describe("recommendation read service", () => {
           conversationStarter: "Ask TypeScript Builder about Shared module: COMP1048.",
           explanationSummary:
             "TypeScript Builder is recommended because of Shared module: COMP1048 and Candidate can help with: typescript debugging.",
+          profileVisibility: "campus",
+          recommendedUserId: "44444444-4444-4444-8444-444444444444",
+        }),
+      ],
+    });
+    expect(requireCompletedAcademicProfileMock).toHaveBeenCalledOnce();
+    expect(createDbMock).toHaveBeenCalledOnce();
+    expect(getAcademicProfileForUserMock).toHaveBeenCalledWith(db, currentUserId);
+    expect(db.select).toHaveBeenCalledOnce();
+    expect(query.limit).toHaveBeenCalledWith(10);
+    expect(db).not.toHaveProperty("insert");
+  });
+
+  it("dry-runs current user recommendation persistence without calling db.insert", async () => {
+    const { db, query } = createCandidateDbMock([candidateRow]);
+
+    createDbMock.mockReturnValue(db);
+    getAcademicProfileForUserMock.mockResolvedValue(currentProfile);
+    requireCompletedAcademicProfileMock.mockResolvedValue({
+      canCreatePost: true,
+      canViewOwnProfile: true,
+      nextRoute: "/feed",
+      profile: {
+        completionStatus: "basic_complete",
+        id: "11111111-1111-4111-8111-111111111111",
+      },
+      session: {
+        authUserId: "22222222-2222-4222-8222-222222222222",
+        email: "student@nottingham.edu.cn",
+        emailDomain: "nottingham.edu.cn",
+        emailVerified: true,
+        role: "student",
+        userId: currentUserId,
+        verifiedAt: "2026-01-02T03:04:05.000Z",
+      },
+      state: "profile_ready",
+    });
+
+    await expect(getCurrentUserRecommendationPersistenceDryRun({ limit: 10 })).resolves.toEqual({
+      drafts: [
+        expect.objectContaining({
+          explanationSummary:
+            "TypeScript Builder is recommended because of Shared module: COMP1048 and Candidate can help with: typescript debugging.",
+          llmModel: "mock-recommendation-explainer",
+          llmProvider: "mock",
+          promptVersion: "recommendation-explanation.v1",
+          recommendedUserId: "44444444-4444-4444-8444-444444444444",
+          recipientUserId: currentUserId,
+          status: "active",
+        }),
+      ],
+      dryRun: true,
+      hasEnoughSignals: true,
+      items: [
+        expect.objectContaining({
+          conversationStarter: "Ask TypeScript Builder about Shared module: COMP1048.",
           profileVisibility: "campus",
           recommendedUserId: "44444444-4444-4444-8444-444444444444",
         }),

@@ -142,6 +142,16 @@ export type RecommendationInsertDraftInput = {
   scoredCandidate: ScoredRecommendationCandidate;
 };
 
+export type RecommendationPersistenceDryRunResult = RecommendationFeedData & {
+  drafts: RecommendationInsertDraft[];
+  dryRun: true;
+};
+
+type RecommendationPersistenceDryRunEntry = {
+  card: VisibleRecommendationCard;
+  draft: RecommendationInsertDraft;
+};
+
 const recommendationScoringWeights = {
   collaborationPreferenceOverlap: 1,
   helpComplementarity: 4,
@@ -420,6 +430,30 @@ function buildMockRecommendationExplanationOutput(scoredCandidate: ScoredRecomme
   };
 }
 
+function buildRecommendationCardFromSuccessfulGeneration(
+  scoredCandidate: ScoredRecommendationCandidate,
+  explanationResult: SuccessfulRecommendationExplanationGeneration,
+): VisibleRecommendationCard {
+  const { candidate } = scoredCandidate;
+
+  return recommendationSchema.parse({
+    canRequestConnect: true,
+    complementarySignals: explanationResult.explanation.complementarySignals,
+    conversationStarter: explanationResult.explanation.conversationStarter,
+    explanationSummary: explanationResult.explanation.explanationSummary,
+    generatedByJobId: null,
+    major: candidate.major,
+    nickname: candidate.nickname,
+    profileSummary: buildCandidateProfileSummary(candidate),
+    profileVisibility: candidate.visibility,
+    recommendationId: candidate.userId,
+    recommendedUserId: candidate.userId,
+    sharedSignals: explanationResult.explanation.sharedSignals,
+    status: "active",
+    year: candidate.year,
+  }) as VisibleRecommendationCard;
+}
+
 export async function buildRecommendationCardFromScoredCandidate(
   viewerProfile: RecommendationScoringProfile,
   scoredCandidate: ScoredRecommendationCandidate,
@@ -436,27 +470,9 @@ export async function buildRecommendationCardFromScoredCandidate(
     };
   }
 
-  const { candidate } = scoredCandidate;
-  const item = recommendationSchema.parse({
-    canRequestConnect: true,
-    complementarySignals: explanationResult.explanation.complementarySignals,
-    conversationStarter: explanationResult.explanation.conversationStarter,
-    explanationSummary: explanationResult.explanation.explanationSummary,
-    generatedByJobId: null,
-    major: candidate.major,
-    nickname: candidate.nickname,
-    profileSummary: buildCandidateProfileSummary(candidate),
-    profileVisibility: candidate.visibility,
-    recommendationId: candidate.userId,
-    recommendedUserId: candidate.userId,
-    sharedSignals: explanationResult.explanation.sharedSignals,
-    status: "active",
-    year: candidate.year,
-  });
-
   return {
     error: null,
-    item,
+    item: buildRecommendationCardFromSuccessfulGeneration(scoredCandidate, explanationResult),
     ok: true,
   };
 }
@@ -599,5 +615,59 @@ export async function getCurrentUserRecommendationCards(
   return {
     hasEnoughSignals: scoredCandidates.length > 0,
     items: buildResults.flatMap((result) => (result.ok ? [result.item] : [])),
+  };
+}
+
+export async function getCurrentUserRecommendationPersistenceDryRun(
+  options: RecommendationCandidateOptions = {},
+): Promise<RecommendationPersistenceDryRunResult> {
+  const gate = await requireCompletedAcademicProfile();
+  const db = createDb();
+  const profile = await getAcademicProfileForUser(db, gate.session.userId);
+
+  if (!profile) {
+    return {
+      drafts: [],
+      dryRun: true,
+      hasEnoughSignals: false,
+      items: [],
+    };
+  }
+
+  const candidates = await listCampusVisibleRecommendationCandidates(db, gate.session.userId, options);
+  const scoredCandidates = scoreRecommendationCandidates(profile, candidates);
+  const buildResults = await Promise.all(
+    scoredCandidates.map(async (scoredCandidate) => {
+      const generation = await generateRecommendationExplanationWithMockProvider(profile, scoredCandidate, {
+        mockOutput: buildMockRecommendationExplanationOutput(scoredCandidate),
+      });
+
+      if (!generation.ok) {
+        return null;
+      }
+
+      const card = buildRecommendationCardFromSuccessfulGeneration(scoredCandidate, generation);
+      const draft = buildRecommendationInsertDraft({
+        card,
+        generation,
+        recipientUserId: gate.session.userId,
+        scoredCandidate,
+      });
+
+      return {
+        card,
+        draft,
+      };
+    }),
+  );
+  const persistableResults = buildResults.filter(
+    (result): result is RecommendationPersistenceDryRunEntry => result !== null,
+  );
+
+  return {
+    drafts: persistableResults.map((result) => result.draft),
+    dryRun: true,
+    hasEnoughSignals: scoredCandidates.length > 0,
+    items: persistableResults.map((result) => result.card),
   };
 }
