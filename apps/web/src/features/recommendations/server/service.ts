@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, or } from "drizzle-orm";
 
 import { getAcademicProfileForUser } from "@/features/profile/server/service";
 import {
@@ -26,7 +26,8 @@ import {
 import type { RecommendationFeedData } from "@/features/recommendations/types";
 import { requireCompletedAcademicProfile } from "@/server/auth/onboarding-gate";
 import { createDb, type DbClient } from "@/server/db/client";
-import { academicProfiles, recommendations } from "@/server/db/schema";
+import { academicProfiles, connectionRequests, recommendations } from "@/server/db/schema";
+import { assertPermissionScope } from "@/server/permissions";
 
 export type RecommendationCandidateProfileRow = {
   collaborationPreference: string[];
@@ -135,6 +136,54 @@ type SuccessfulRecommendationExplanationGeneration = Extract<
 
 export type RecommendationInsertDraft = typeof recommendations.$inferInsert;
 
+export type RecommendationPersistenceExistingRecommendation = {
+  recipientUserId: string;
+  recommendedUserId: string;
+  status: "active" | "dismissed" | "requested" | "expired";
+};
+
+export type RecommendationPersistenceExistingConnectionRequest = {
+  requesterId: string;
+  recipientId: string;
+  status: "pending" | "accepted" | "rejected" | "cancelled";
+};
+
+export type RecommendationPersistenceWriteGuardIssueCode =
+  | "ACTOR_MUST_MATCH_RECIPIENT"
+  | "SELF_RECOMMENDATION_NOT_ALLOWED"
+  | "DRAFT_MUST_BE_ACTIVE"
+  | "CANDIDATE_MUST_BE_CAMPUS_VISIBLE"
+  | "CANDIDATE_PROFILE_MUST_BE_COMPLETE"
+  | "DUPLICATE_RECOMMENDATION"
+  | "DUPLICATE_RECOMMENDATION_IN_BATCH"
+  | "CONNECTION_ALREADY_PENDING_OR_ACCEPTED";
+
+export type RecommendationPersistenceWriteGuardIssue = {
+  code: RecommendationPersistenceWriteGuardIssueCode;
+  message: string;
+};
+
+export type RecommendationPersistenceWriteGuardInput = {
+  actorUserId: string;
+  draft: RecommendationInsertDraft;
+  existingConnectionRequests?: RecommendationPersistenceExistingConnectionRequest[];
+  existingRecommendations?: RecommendationPersistenceExistingRecommendation[];
+  seenRecommendationPairs?: ReadonlySet<string>;
+};
+
+export type RecommendationPersistenceWriteGuardResult =
+  | {
+      draft: RecommendationInsertDraft;
+      ok: true;
+      pairKey: string;
+    }
+  | {
+      draft: RecommendationInsertDraft;
+      issues: RecommendationPersistenceWriteGuardIssue[];
+      ok: false;
+      pairKey: string;
+    };
+
 export type RecommendationInsertDraftInput = {
   card: VisibleRecommendationCard;
   generation: SuccessfulRecommendationExplanationGeneration;
@@ -145,6 +194,18 @@ export type RecommendationInsertDraftInput = {
 export type RecommendationPersistenceDryRunResult = RecommendationFeedData & {
   drafts: RecommendationInsertDraft[];
   dryRun: true;
+};
+
+export type RecommendationPersistenceInsertedRecommendation = {
+  id: string;
+  recipientUserId: string;
+  recommendedUserId: string;
+  status: "active" | "dismissed" | "requested" | "expired";
+};
+
+export type RecommendationPersistenceInsertResult = {
+  inserted: RecommendationPersistenceInsertedRecommendation[];
+  rejected: Extract<RecommendationPersistenceWriteGuardResult, { ok: false }>[];
 };
 
 type RecommendationPersistenceDryRunEntry = {
@@ -223,6 +284,143 @@ function findOverlappingSignals(left: string[], right: string[]) {
 
 function formatSignals(prefix: string, values: string[]) {
   return values.map((value) => `${prefix}: ${value}`);
+}
+
+export function getRecommendationPairKey(draft: Pick<RecommendationInsertDraft, "recipientUserId" | "recommendedUserId">) {
+  return `${draft.recipientUserId}:${draft.recommendedUserId}`;
+}
+
+function hasSameRecommendationPair(
+  recommendation: RecommendationPersistenceExistingRecommendation,
+  draft: RecommendationInsertDraft,
+) {
+  return (
+    recommendation.recipientUserId === draft.recipientUserId &&
+    recommendation.recommendedUserId === draft.recommendedUserId
+  );
+}
+
+function hasSameConnectionPair(
+  connectionRequest: RecommendationPersistenceExistingConnectionRequest,
+  draft: RecommendationInsertDraft,
+) {
+  return (
+    (connectionRequest.requesterId === draft.recipientUserId &&
+      connectionRequest.recipientId === draft.recommendedUserId) ||
+    (connectionRequest.requesterId === draft.recommendedUserId &&
+      connectionRequest.recipientId === draft.recipientUserId)
+  );
+}
+
+function getDraftSignalSnapshotValue(draft: RecommendationInsertDraft, key: string) {
+  const { signalSnapshot } = draft;
+
+  if (!signalSnapshot || typeof signalSnapshot !== "object" || Array.isArray(signalSnapshot)) {
+    return null;
+  }
+
+  const value = (signalSnapshot as Record<string, unknown>)[key];
+
+  return typeof value === "string" ? value : null;
+}
+
+export function guardRecommendationPersistenceWrite({
+  actorUserId,
+  draft,
+  existingConnectionRequests = [],
+  existingRecommendations = [],
+  seenRecommendationPairs,
+}: RecommendationPersistenceWriteGuardInput): RecommendationPersistenceWriteGuardResult {
+  assertPermissionScope("recommendation:write");
+
+  const pairKey = getRecommendationPairKey(draft);
+  const issues: RecommendationPersistenceWriteGuardIssue[] = [];
+  const candidateVisibility = getDraftSignalSnapshotValue(draft, "candidateVisibility");
+  const profileVisibility = getDraftSignalSnapshotValue(draft, "profileVisibility");
+  const completionStatus = getDraftSignalSnapshotValue(draft, "completionStatus");
+
+  if (actorUserId !== draft.recipientUserId) {
+    issues.push({
+      code: "ACTOR_MUST_MATCH_RECIPIENT",
+      message: "Only the recommendation recipient may persist a recommendation draft.",
+    });
+  }
+
+  if (draft.recipientUserId === draft.recommendedUserId) {
+    issues.push({
+      code: "SELF_RECOMMENDATION_NOT_ALLOWED",
+      message: "A recommendation may not target the same user as its recipient.",
+    });
+  }
+
+  if (draft.status !== "active") {
+    issues.push({
+      code: "DRAFT_MUST_BE_ACTIVE",
+      message: "Only active recommendation drafts are eligible for persistence.",
+    });
+  }
+
+  if (candidateVisibility !== "campus" || profileVisibility !== "campus") {
+    issues.push({
+      code: "CANDIDATE_MUST_BE_CAMPUS_VISIBLE",
+      message: "Only campus-visible candidate profiles are eligible for recommendation persistence.",
+    });
+  }
+
+  if (completionStatus !== "basic_complete" && completionStatus !== "recommendation_ready") {
+    issues.push({
+      code: "CANDIDATE_PROFILE_MUST_BE_COMPLETE",
+      message: "Only completed candidate profiles are eligible for recommendation persistence.",
+    });
+  }
+
+  if (
+    existingRecommendations.some(
+      (recommendation) =>
+        hasSameRecommendationPair(recommendation, draft) &&
+        (recommendation.status === "active" || recommendation.status === "requested"),
+    )
+  ) {
+    issues.push({
+      code: "DUPLICATE_RECOMMENDATION",
+      message: "An active or requested recommendation already exists for this recipient and candidate.",
+    });
+  }
+
+  if (seenRecommendationPairs?.has(pairKey)) {
+    issues.push({
+      code: "DUPLICATE_RECOMMENDATION_IN_BATCH",
+      message: "This recommendation pair has already been accepted in the current persistence batch.",
+    });
+  }
+
+  if (
+    existingConnectionRequests.some(
+      (connectionRequest) =>
+        hasSameConnectionPair(connectionRequest, draft) &&
+        (connectionRequest.status === "pending" || connectionRequest.status === "accepted"),
+    )
+  ) {
+    issues.push({
+      code: "CONNECTION_ALREADY_PENDING_OR_ACCEPTED",
+      message: "A pending or accepted connection already exists for this recommendation pair.",
+    });
+  }
+
+  if (issues.length > 0) {
+    return {
+      draft,
+      issues,
+      ok: false,
+      pairKey,
+    };
+  }
+
+  return {
+    draft,
+    ok: true,
+    pairKey,
+  };
 }
 
 export function scoreRecommendationCandidate(
@@ -564,6 +762,96 @@ export async function listCampusVisibleRecommendationCandidates(
   );
 }
 
+export async function listExistingActiveOrRequestedRecommendationsForUser(
+  db: DbClient,
+  recipientUserId: string,
+): Promise<RecommendationPersistenceExistingRecommendation[]> {
+  return db
+    .select({
+      recipientUserId: recommendations.recipientUserId,
+      recommendedUserId: recommendations.recommendedUserId,
+      status: recommendations.status,
+    })
+    .from(recommendations)
+    .where(
+      and(
+        eq(recommendations.recipientUserId, recipientUserId),
+        inArray(recommendations.status, ["active", "requested"]),
+      ),
+    );
+}
+
+export async function listExistingPendingOrAcceptedConnectionRequestsForUser(
+  db: DbClient,
+  userId: string,
+): Promise<RecommendationPersistenceExistingConnectionRequest[]> {
+  return db
+    .select({
+      requesterId: connectionRequests.requesterId,
+      recipientId: connectionRequests.recipientId,
+      status: connectionRequests.status,
+    })
+    .from(connectionRequests)
+    .where(
+      and(
+        inArray(connectionRequests.status, ["pending", "accepted"]),
+        or(eq(connectionRequests.requesterId, userId), eq(connectionRequests.recipientId, userId)),
+      ),
+    );
+}
+
+export async function insertRecommendationDraftsForUser(
+  db: DbClient,
+  actorUserId: string,
+  drafts: RecommendationInsertDraft[],
+): Promise<RecommendationPersistenceInsertResult> {
+  const existingRecommendations = await listExistingActiveOrRequestedRecommendationsForUser(db, actorUserId);
+  const existingConnectionRequests = await listExistingPendingOrAcceptedConnectionRequestsForUser(db, actorUserId);
+  const seenRecommendationPairs = new Set<string>();
+  const acceptedDrafts: RecommendationInsertDraft[] = [];
+  const rejected: Extract<RecommendationPersistenceWriteGuardResult, { ok: false }>[] = [];
+
+  drafts.forEach((draft) => {
+    const guard = guardRecommendationPersistenceWrite({
+      actorUserId,
+      draft,
+      existingConnectionRequests,
+      existingRecommendations,
+      seenRecommendationPairs,
+    });
+
+    if (!guard.ok) {
+      rejected.push(guard);
+      return;
+    }
+
+    seenRecommendationPairs.add(guard.pairKey);
+    acceptedDrafts.push(guard.draft);
+  });
+
+  if (acceptedDrafts.length === 0) {
+    return {
+      inserted: [],
+      rejected,
+    };
+  }
+
+  const inserted = await db
+    .insert(recommendations)
+    .values(acceptedDrafts)
+    .returning({
+      id: recommendations.id,
+      recipientUserId: recommendations.recipientUserId,
+      recommendedUserId: recommendations.recommendedUserId,
+      status: recommendations.status,
+    });
+
+  return {
+    inserted,
+    rejected,
+  };
+}
+
 export async function getCurrentUserRecommendationFeed(): Promise<RecommendationFeedData> {
   await requireCompletedAcademicProfile();
 
@@ -635,7 +923,13 @@ export async function getCurrentUserRecommendationPersistenceDryRun(
   }
 
   const candidates = await listCampusVisibleRecommendationCandidates(db, gate.session.userId, options);
+  const existingRecommendations = await listExistingActiveOrRequestedRecommendationsForUser(db, gate.session.userId);
+  const existingConnectionRequests = await listExistingPendingOrAcceptedConnectionRequestsForUser(
+    db,
+    gate.session.userId,
+  );
   const scoredCandidates = scoreRecommendationCandidates(profile, candidates);
+  const seenRecommendationPairs = new Set<string>();
   const buildResults = await Promise.all(
     scoredCandidates.map(async (scoredCandidate) => {
       const generation = await generateRecommendationExplanationWithMockProvider(profile, scoredCandidate, {
@@ -653,10 +947,23 @@ export async function getCurrentUserRecommendationPersistenceDryRun(
         recipientUserId: gate.session.userId,
         scoredCandidate,
       });
+      const guard = guardRecommendationPersistenceWrite({
+        actorUserId: gate.session.userId,
+        draft,
+        existingConnectionRequests,
+        existingRecommendations,
+        seenRecommendationPairs,
+      });
+
+      if (!guard.ok) {
+        return null;
+      }
+
+      seenRecommendationPairs.add(guard.pairKey);
 
       return {
         card,
-        draft,
+        draft: guard.draft,
       };
     }),
   );
