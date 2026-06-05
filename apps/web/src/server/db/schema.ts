@@ -209,6 +209,19 @@ export const recommendations = pgTable(
       .notNull()
       .default({}),
     promptVersion: varchar("prompt_version", { length: 80 }).notNull(),
+    llmProvider: varchar("llm_provider", { length: 40 }),
+    llmModel: varchar("llm_model", { length: 120 }),
+    llmRawResponseId: varchar("llm_raw_response_id", { length: 120 }),
+    llmUsage: jsonb("llm_usage")
+      .$type<{
+        inputTokens: number | null;
+        outputTokens: number | null;
+      }>()
+      .notNull()
+      .default({
+        inputTokens: null,
+        outputTokens: null,
+      }),
     status: recommendationStatusEnum("status").notNull().default("active"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
