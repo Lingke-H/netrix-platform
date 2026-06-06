@@ -3,7 +3,7 @@ import { Pencil } from "lucide-react";
 
 import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
-import type { AcademicProfile } from "@/features/profile/schemas";
+import type { AcademicPortrait, AcademicProfile } from "@/features/profile/schemas";
 import { getCurrentUserProfileData } from "@/features/profile/server/service";
 import { resolveProtectedPageData } from "@/server/auth/redirects";
 
@@ -97,6 +97,59 @@ function EmptyProfileState() {
   );
 }
 
+function PortraitSection({ portrait }: { portrait: AcademicPortrait }) {
+  return (
+    <section className="space-y-4 border border-[var(--color-line)] bg-[var(--color-surface-strong)] p-5">
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusBadge tone={portrait.status === "confirmed" ? "ready" : "info"}>
+          {portrait.status}
+        </StatusBadge>
+        {portrait.promptVersion ? (
+          <span className="text-xs font-medium text-[var(--color-muted)]">
+            v{portrait.promptVersion}
+          </span>
+        ) : null}
+      </div>
+      {portrait.summary ? (
+        <p className="text-sm leading-7 text-[var(--color-muted)]">{portrait.summary}</p>
+      ) : null}
+      {portrait.strengthsDraft.length > 0 ? (
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">
+            Strengths
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {portrait.strengthsDraft.map((s) => (
+              <span key={s} className="bg-[var(--color-accent-soft)] px-2 py-1 text-xs font-medium text-[var(--color-accent)]">
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {portrait.suggestedTags.length > 0 ? (
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">
+            Suggested tags
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {portrait.suggestedTags.map((t) => (
+              <span key={t} className="bg-[rgba(61,90,134,0.12)] px-2 py-1 text-xs font-medium text-[var(--color-info)]">
+                #{t}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {portrait.collaborationDraft ? (
+        <p className="text-sm leading-7 text-[var(--color-muted)]">
+          Collaboration style: {portrait.collaborationDraft}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
 export default async function MePage() {
   const { gate, routeState } = await resolveProtectedPageData("/me", () => getCurrentUserProfileData());
 
@@ -113,6 +166,8 @@ export default async function MePage() {
       </div>
 
       {routeState.profile ? <ProfileSummary profile={routeState.profile} /> : <EmptyProfileState />}
+
+      {routeState.portrait ? <PortraitSection portrait={routeState.portrait} /> : null}
     </PageFrame>
   );
 }

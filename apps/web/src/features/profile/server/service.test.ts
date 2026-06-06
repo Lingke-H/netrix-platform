@@ -153,13 +153,13 @@ describe("academic profile read service", () => {
   it("builds route state from profile and onboarding gate status", () => {
     const profile = buildAcademicProfileDto(profileRow);
 
-    expect(buildProfileRouteState(profile, gate)).toMatchObject({
+    expect(buildProfileRouteState(profile, null, gate)).toMatchObject({
       completionStatus: "basic_complete",
       portrait: null,
       profile,
       visibility: "campus",
     });
-    expect(buildProfileRouteState(null, needsOnboardingGate)).toMatchObject({
+    expect(buildProfileRouteState(null, null, needsOnboardingGate)).toMatchObject({
       completionStatus: "incomplete",
       portrait: null,
       profile: null,

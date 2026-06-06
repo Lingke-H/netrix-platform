@@ -40,3 +40,8 @@ export {
   type PersistedAiRecommendation,
   type PersistedAiNicknameDraft,
 } from "./persist";
+export {
+  confirmNickname,
+  confirmCurrentUserNickname,
+  NicknameUpdateError,
+} from "./nickname-service";

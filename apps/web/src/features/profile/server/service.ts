@@ -13,6 +13,8 @@ import { getOnboardingGate, type OnboardingGate } from "@/server/auth/onboarding
 import { requireVerifiedCampusUser } from "@/server/auth/session";
 import { createDb, type DbClient } from "@/server/db/client";
 import { academicProfiles } from "@/server/db/schema";
+import { academicPortraits } from "@/server/db/schema";
+import type { AcademicPortrait } from "@/features/profile/schemas";
 
 export type AcademicProfileUpsertInput = Omit<AcademicProfileFormInput, "completionStatus" | "userId">;
 
@@ -162,10 +164,10 @@ export function buildPublicAcademicProfileDto(row: PublicAcademicProfileDtoRow):
   });
 }
 
-export function buildProfileRouteState(profile: AcademicProfile | null, gate: OnboardingGate): ProfileRouteState {
+export function buildProfileRouteState(profile: AcademicProfile | null, portrait: AcademicPortrait | null, gate: OnboardingGate): ProfileRouteState {
   return {
     completionStatus: profile?.completionStatus ?? gate.profile?.completionStatus ?? "incomplete",
-    portrait: null,
+    portrait,
     profile,
     visibility: profile?.visibility ?? "campus",
   };
@@ -297,10 +299,31 @@ export async function getCurrentUserProfileData(): Promise<CurrentUserProfileDat
   const gate = await getOnboardingGate();
   const db = createDb();
   const profile = await getAcademicProfileForUser(db, gate.session.userId);
+  const [portraitRow] = await db
+    .select()
+    .from(academicPortraits)
+    .where(eq(academicPortraits.userId, gate.session.userId))
+    .limit(1);
+
+  const portrait: AcademicPortrait | null = portraitRow
+    ? {
+        collaborationDraft: portraitRow.collaborationDraft,
+        confirmedAt: portraitRow.confirmedAt?.toISOString() ?? null,
+        generatedAt: portraitRow.generatedAt?.toISOString() ?? null,
+        id: portraitRow.id,
+        promptVersion: portraitRow.promptVersion,
+        sourceSnapshot: portraitRow.sourceSnapshot as Record<string, string | number | boolean | string[] | null>,
+        status: portraitRow.status,
+        strengthsDraft: portraitRow.strengthsDraft,
+        suggestedTags: portraitRow.suggestedTags,
+        summary: portraitRow.summary,
+        userId: portraitRow.userId,
+      }
+    : null;
 
   return {
     gate,
-    routeState: buildProfileRouteState(profile, gate),
+    routeState: buildProfileRouteState(profile, portrait, gate),
   };
 }
 
