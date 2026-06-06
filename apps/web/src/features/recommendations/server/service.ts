@@ -134,6 +134,28 @@ type SuccessfulRecommendationExplanationGeneration = Extract<
   { ok: true }
 >;
 
+export type PersistedRecommendationFeedRow = {
+  recommendation: {
+    complementarySignals: string[];
+    conversationStarter: string;
+    explanationSummary: string;
+    generatedByJobId: string | null;
+    id: string;
+    sharedSignals: string[];
+    status: "active";
+  };
+  recommendedProfile: {
+    interests: string[];
+    major: "math" | "computer-science" | "eee" | "fam" | "ibe" | "other";
+    modules: string[];
+    nickname: string;
+    skills: string[];
+    userId: string;
+    visibility: "private" | "campus" | "public";
+    year: "foundation" | "year-1" | "year-2" | "year-3" | "year-4" | "postgraduate";
+  };
+};
+
 export type RecommendationInsertDraft = typeof recommendations.$inferInsert;
 
 export type RecommendationPersistenceExistingRecommendation = {
@@ -604,7 +626,7 @@ export async function generateRecommendationExplanationWithMockProvider(
   };
 }
 
-function buildCandidateProfileSummary(candidate: RecommendationCandidateProfile) {
+function buildCandidateProfileSummary(candidate: Pick<RecommendationCandidateProfile, "interests" | "modules" | "skills">) {
   const summaryParts = [
     candidate.modules.length > 0 ? `Modules: ${candidate.modules.slice(0, 3).join(", ")}` : null,
     candidate.interests.length > 0 ? `Interests: ${candidate.interests.slice(0, 3).join(", ")}` : null,
@@ -612,6 +634,44 @@ function buildCandidateProfileSummary(candidate: RecommendationCandidateProfile)
   ].filter((part): part is string => part !== null);
 
   return (summaryParts.join(". ") || "Campus-visible academic profile.").slice(0, 280);
+}
+
+export function buildPersistedRecommendationCard(row: PersistedRecommendationFeedRow): Recommendation {
+  if (row.recommendedProfile.visibility === "private") {
+    return recommendationSchema.parse({
+      canRequestConnect: false,
+      complementarySignals: [],
+      conversationStarter: null,
+      explanationSummary: "This recommendation is hidden because the profile is private.",
+      generatedByJobId: row.recommendation.generatedByJobId,
+      major: null,
+      nickname: "Private profile",
+      profileSummary: null,
+      profileVisibility: "private",
+      recommendationId: row.recommendation.id,
+      recommendedUserId: null,
+      sharedSignals: [],
+      status: row.recommendation.status,
+      year: null,
+    });
+  }
+
+  return recommendationSchema.parse({
+    canRequestConnect: true,
+    complementarySignals: row.recommendation.complementarySignals,
+    conversationStarter: row.recommendation.conversationStarter,
+    explanationSummary: row.recommendation.explanationSummary,
+    generatedByJobId: row.recommendation.generatedByJobId,
+    major: row.recommendedProfile.major,
+    nickname: row.recommendedProfile.nickname,
+    profileSummary: buildCandidateProfileSummary(row.recommendedProfile),
+    profileVisibility: row.recommendedProfile.visibility,
+    recommendationId: row.recommendation.id,
+    recommendedUserId: row.recommendedProfile.userId,
+    sharedSignals: row.recommendation.sharedSignals,
+    status: row.recommendation.status,
+    year: row.recommendedProfile.year,
+  });
 }
 
 function buildMockRecommendationExplanationOutput(scoredCandidate: ScoredRecommendationCandidate) {
@@ -800,6 +860,53 @@ export async function listExistingPendingOrAcceptedConnectionRequestsForUser(
     );
 }
 
+export async function listPersistedRecommendationFeedCardsForUser(
+  db: DbClient,
+  recipientUserId: string,
+): Promise<RecommendationFeedData> {
+  assertPermissionScope("recommendation:read");
+
+  const rows = await db
+    .select({
+      recommendation: {
+        complementarySignals: recommendations.complementarySignals,
+        conversationStarter: recommendations.conversationStarter,
+        explanationSummary: recommendations.explanationSummary,
+        generatedByJobId: recommendations.generatedByJobId,
+        id: recommendations.id,
+        sharedSignals: recommendations.sharedSignals,
+        status: recommendations.status,
+      },
+      recommendedProfile: {
+        interests: academicProfiles.interests,
+        major: academicProfiles.major,
+        modules: academicProfiles.modules,
+        nickname: academicProfiles.nickname,
+        skills: academicProfiles.skills,
+        userId: academicProfiles.userId,
+        visibility: academicProfiles.visibility,
+        year: academicProfiles.year,
+      },
+    })
+    .from(recommendations)
+    .innerJoin(academicProfiles, eq(recommendations.recommendedUserId, academicProfiles.userId))
+    .where(and(eq(recommendations.recipientUserId, recipientUserId), eq(recommendations.status, "active")))
+    .orderBy(desc(recommendations.createdAt));
+
+  return {
+    hasEnoughSignals: rows.length > 0,
+    items: rows.map((row) =>
+      buildPersistedRecommendationCard({
+        ...row,
+        recommendation: {
+          ...row.recommendation,
+          status: "active",
+        },
+      }),
+    ),
+  };
+}
+
 export async function insertRecommendationDraftsForUser(
   db: DbClient,
   actorUserId: string,
@@ -853,9 +960,10 @@ export async function insertRecommendationDraftsForUser(
 }
 
 export async function getCurrentUserRecommendationFeed(): Promise<RecommendationFeedData> {
-  await requireCompletedAcademicProfile();
+  const gate = await requireCompletedAcademicProfile();
+  const db = createDb();
 
-  return buildEmptyRecommendationFeedData();
+  return listPersistedRecommendationFeedCardsForUser(db, gate.session.userId);
 }
 
 export async function getCurrentUserRecommendationCandidates(
@@ -906,12 +1014,12 @@ export async function getCurrentUserRecommendationCards(
   };
 }
 
-export async function getCurrentUserRecommendationPersistenceDryRun(
+export async function buildRecommendationPersistenceDryRunForUser(
+  db: DbClient,
+  actorUserId: string,
   options: RecommendationCandidateOptions = {},
 ): Promise<RecommendationPersistenceDryRunResult> {
-  const gate = await requireCompletedAcademicProfile();
-  const db = createDb();
-  const profile = await getAcademicProfileForUser(db, gate.session.userId);
+  const profile = await getAcademicProfileForUser(db, actorUserId);
 
   if (!profile) {
     return {
@@ -922,12 +1030,9 @@ export async function getCurrentUserRecommendationPersistenceDryRun(
     };
   }
 
-  const candidates = await listCampusVisibleRecommendationCandidates(db, gate.session.userId, options);
-  const existingRecommendations = await listExistingActiveOrRequestedRecommendationsForUser(db, gate.session.userId);
-  const existingConnectionRequests = await listExistingPendingOrAcceptedConnectionRequestsForUser(
-    db,
-    gate.session.userId,
-  );
+  const candidates = await listCampusVisibleRecommendationCandidates(db, actorUserId, options);
+  const existingRecommendations = await listExistingActiveOrRequestedRecommendationsForUser(db, actorUserId);
+  const existingConnectionRequests = await listExistingPendingOrAcceptedConnectionRequestsForUser(db, actorUserId);
   const scoredCandidates = scoreRecommendationCandidates(profile, candidates);
   const seenRecommendationPairs = new Set<string>();
   const buildResults = await Promise.all(
@@ -944,11 +1049,11 @@ export async function getCurrentUserRecommendationPersistenceDryRun(
       const draft = buildRecommendationInsertDraft({
         card,
         generation,
-        recipientUserId: gate.session.userId,
+        recipientUserId: actorUserId,
         scoredCandidate,
       });
       const guard = guardRecommendationPersistenceWrite({
-        actorUserId: gate.session.userId,
+        actorUserId,
         draft,
         existingConnectionRequests,
         existingRecommendations,
@@ -974,7 +1079,26 @@ export async function getCurrentUserRecommendationPersistenceDryRun(
   return {
     drafts: persistableResults.map((result) => result.draft),
     dryRun: true,
-    hasEnoughSignals: scoredCandidates.length > 0,
+    hasEnoughSignals: persistableResults.length > 0,
     items: persistableResults.map((result) => result.card),
   };
+}
+
+export async function getCurrentUserRecommendationPersistenceDryRun(
+  options: RecommendationCandidateOptions = {},
+): Promise<RecommendationPersistenceDryRunResult> {
+  const gate = await requireCompletedAcademicProfile();
+  const db = createDb();
+
+  return buildRecommendationPersistenceDryRunForUser(db, gate.session.userId, options);
+}
+
+export async function persistCurrentUserRecommendationDryRunDrafts(
+  options: RecommendationCandidateOptions = {},
+): Promise<RecommendationPersistenceInsertResult> {
+  const gate = await requireCompletedAcademicProfile();
+  const db = createDb();
+  const dryRun = await buildRecommendationPersistenceDryRunForUser(db, gate.session.userId, options);
+
+  return insertRecommendationDraftsForUser(db, gate.session.userId, dryRun.drafts);
 }

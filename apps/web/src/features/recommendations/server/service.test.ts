@@ -29,6 +29,7 @@ import {
   buildRecommendationExplanationInput,
   buildRecommendationExplanationPromptPayload,
   buildRecommendationInsertDraft,
+  buildPersistedRecommendationCard,
   generateRecommendationExplanationWithMockProvider,
   getCurrentUserRecommendationCards,
   getCurrentUserRecommendationCandidates,
@@ -36,10 +37,15 @@ import {
   getCurrentUserRecommendationPersistenceDryRun,
   getCurrentUserScoredRecommendationCandidates,
   getRecommendationCandidateLimit,
+  insertRecommendationDraftsForUser,
   listCampusVisibleRecommendationCandidates,
+  listPersistedRecommendationFeedCardsForUser,
   parseRecommendationExplanationOutput,
+  persistCurrentUserRecommendationDryRunDrafts,
   scoreRecommendationCandidate,
   scoreRecommendationCandidates,
+  type PersistedRecommendationFeedRow,
+  type RecommendationInsertDraft,
   type RecommendationCandidateProfileRow,
   type RecommendationScoringProfile,
 } from "@/features/recommendations/server/service";
@@ -83,21 +89,147 @@ const currentProfile = {
   year: "year-2",
 } satisfies AcademicProfile;
 
-function createCandidateDbMock(rows: unknown[]) {
+function createSelectQueryMock(rows: unknown[]) {
   const query = {
     from: vi.fn(() => query),
+    innerJoin: vi.fn(() => query),
     limit: vi.fn(async () => rows),
     orderBy: vi.fn(() => query),
     then: vi.fn((resolve: (value: unknown[]) => unknown, reject?: (reason: unknown) => unknown) =>
-      Promise.resolve([]).then(resolve, reject),
+      Promise.resolve(rows).then(resolve, reject),
     ),
     where: vi.fn(() => query),
   };
+
+  return query;
+}
+
+function createCandidateDbMock(
+  rows: unknown[],
+  options: {
+    existingConnectionRequests?: unknown[];
+    existingRecommendations?: unknown[];
+  } = {},
+) {
+  const query = createSelectQueryMock(rows);
+  const existingRecommendationsQuery = createSelectQueryMock(options.existingRecommendations ?? []);
+  const existingConnectionRequestsQuery = createSelectQueryMock(options.existingConnectionRequests ?? []);
+  const selectResults = [query, existingRecommendationsQuery, existingConnectionRequestsQuery];
+  let selectIndex = 0;
   const db = {
-    select: vi.fn(() => query),
+    select: vi.fn(() => selectResults[selectIndex++] ?? createSelectQueryMock([])),
   };
 
   return { db, query };
+}
+
+function createRecommendationInsertDbMock(
+  options: {
+    existingConnectionRequests?: unknown[];
+    existingRecommendations?: unknown[];
+    insertedRows?: unknown[];
+  } = {},
+) {
+  const existingRecommendationsQuery = createSelectQueryMock(options.existingRecommendations ?? []);
+  const existingConnectionRequestsQuery = createSelectQueryMock(options.existingConnectionRequests ?? []);
+  const selectResults = [existingRecommendationsQuery, existingConnectionRequestsQuery];
+  let selectIndex = 0;
+  const insertQuery = {
+    returning: vi.fn(async () => options.insertedRows ?? []),
+    values: vi.fn(() => insertQuery),
+  };
+  const db = {
+    insert: vi.fn(() => insertQuery),
+    select: vi.fn(() => selectResults[selectIndex++] ?? createSelectQueryMock([])),
+  };
+
+  return { db, insertQuery };
+}
+
+function createRecommendationInsertDraft(
+  overrides: Partial<RecommendationInsertDraft> = {},
+): RecommendationInsertDraft {
+  const draft = {
+    complementarySignals: ["Candidate can help with: typescript debugging"],
+    conversationStarter: "Ask TypeScript Builder about Shared module: COMP1048.",
+    explanationSummary:
+      "TypeScript Builder is recommended because of Shared module: COMP1048 and Candidate can help with: typescript debugging.",
+    generatedByJobId: null,
+    llmModel: "mock-recommendation-explainer",
+    llmProvider: "mock",
+    llmRawResponseId: "mock-recommendation-response-1",
+    llmUsage: {
+      inputTokens: 64,
+      outputTokens: 48,
+    },
+    promptVersion: "recommendation-explanation.v1",
+    recommendedUserId: candidateRow.userId,
+    recipientUserId: currentUserId,
+    scoreSummary: {
+      collaborationPreferenceOverlap: 1,
+      helpComplementarity: 4,
+      interestOverlap: 2,
+      moduleOverlap: 3,
+      skillOverlap: 2,
+      total: 12,
+    },
+    sharedSignals: [
+      "Shared module: COMP1048",
+      "Shared interest: web apps",
+      "Shared skill: react",
+      "Shared collaboration preference: pair study",
+    ],
+    signalSnapshot: {
+      candidateUserId: candidateRow.userId,
+      candidateVisibility: "campus",
+      completionStatus: "basic_complete",
+      helpNeeded: ["signals"],
+      helpOffered: ["typescript debugging"],
+      interests: ["web apps"],
+      modules: ["COMP1048"],
+      profileVisibility: "campus",
+      promptVersion: "recommendation-explanation.v1",
+      skills: ["react"],
+    },
+    status: "active",
+  } satisfies RecommendationInsertDraft;
+
+  return {
+    ...draft,
+    ...overrides,
+  };
+}
+
+function createPersistedRecommendationFeedRow(
+  overrides: Partial<PersistedRecommendationFeedRow> = {},
+): PersistedRecommendationFeedRow {
+  const row = {
+    recommendation: {
+      complementarySignals: ["Candidate can help with: typescript debugging"],
+      conversationStarter: "Ask TypeScript Builder about Shared module: COMP1048.",
+      explanationSummary:
+        "TypeScript Builder is recommended because of Shared module: COMP1048 and Candidate can help with: typescript debugging.",
+      generatedByJobId: null,
+      id: "77777777-7777-4777-8777-777777777777",
+      sharedSignals: ["Shared module: COMP1048", "Shared interest: web apps"],
+      status: "active",
+    },
+    recommendedProfile: {
+      interests: ["web apps"],
+      major: "computer-science",
+      modules: ["COMP1048"],
+      nickname: "TypeScript Builder",
+      skills: ["react"],
+      userId: candidateRow.userId,
+      visibility: "campus",
+      year: "year-2",
+    },
+  } satisfies PersistedRecommendationFeedRow;
+
+  return {
+    ...row,
+    ...overrides,
+  };
 }
 
 describe("recommendation read service", () => {
@@ -132,6 +264,60 @@ describe("recommendation read service", () => {
         recommendedUserId: null,
       }),
     ]);
+  });
+
+  it("maps persisted active recommendation rows into visible feed cards", () => {
+    expect(buildPersistedRecommendationCard(createPersistedRecommendationFeedRow())).toEqual({
+      canRequestConnect: true,
+      complementarySignals: ["Candidate can help with: typescript debugging"],
+      conversationStarter: "Ask TypeScript Builder about Shared module: COMP1048.",
+      explanationSummary:
+        "TypeScript Builder is recommended because of Shared module: COMP1048 and Candidate can help with: typescript debugging.",
+      generatedByJobId: null,
+      major: "computer-science",
+      nickname: "TypeScript Builder",
+      profileSummary: "Modules: COMP1048. Interests: web apps. Skills: react",
+      profileVisibility: "campus",
+      recommendationId: "77777777-7777-4777-8777-777777777777",
+      recommendedUserId: candidateRow.userId,
+      sharedSignals: ["Shared module: COMP1048", "Shared interest: web apps"],
+      status: "active",
+      year: "year-2",
+    });
+  });
+
+  it("hides persisted recommendation profile fields when the recommended profile is private", () => {
+    expect(
+      buildPersistedRecommendationCard(
+        createPersistedRecommendationFeedRow({
+          recommendedProfile: {
+            interests: ["web apps"],
+            major: "computer-science",
+            modules: ["COMP1048"],
+            nickname: "TypeScript Builder",
+            skills: ["react"],
+            userId: candidateRow.userId,
+            visibility: "private",
+            year: "year-2",
+          },
+        }),
+      ),
+    ).toEqual({
+      canRequestConnect: false,
+      complementarySignals: [],
+      conversationStarter: null,
+      explanationSummary: "This recommendation is hidden because the profile is private.",
+      generatedByJobId: null,
+      major: null,
+      nickname: "Private profile",
+      profileSummary: null,
+      profileVisibility: "private",
+      recommendationId: "77777777-7777-4777-8777-777777777777",
+      recommendedUserId: null,
+      sharedSignals: [],
+      status: "active",
+      year: null,
+    });
   });
 
   it("clamps recommendation candidate limits", () => {
@@ -572,7 +758,185 @@ describe("recommendation read service", () => {
     expect(db.insert).not.toHaveBeenCalled();
   });
 
+  it("rejects blocked recommendation insert drafts without calling db.insert", async () => {
+    const draft = createRecommendationInsertDraft();
+    const { db } = createRecommendationInsertDbMock({
+      existingConnectionRequests: [
+        {
+          recipientId: currentUserId,
+          requesterId: candidateRow.userId,
+          status: "pending",
+        },
+      ],
+      existingRecommendations: [
+        {
+          recipientUserId: currentUserId,
+          recommendedUserId: candidateRow.userId,
+          status: "active",
+        },
+      ],
+    });
+
+    await expect(
+      insertRecommendationDraftsForUser(db as unknown as DbClient, currentUserId, [draft]),
+    ).resolves.toEqual({
+      inserted: [],
+      rejected: [
+        expect.objectContaining({
+          draft,
+          issues: expect.arrayContaining([
+            expect.objectContaining({ code: "DUPLICATE_RECOMMENDATION" }),
+            expect.objectContaining({ code: "CONNECTION_ALREADY_PENDING_OR_ACCEPTED" }),
+          ]),
+          ok: false,
+          pairKey: `${currentUserId}:${candidateRow.userId}`,
+        }),
+      ],
+    });
+    expect(db.select).toHaveBeenCalledTimes(2);
+    expect(db.insert).not.toHaveBeenCalled();
+  });
+
+  it("rejects recommendation insert drafts when the actor is not the draft recipient", async () => {
+    const otherRecipientUserId = "55555555-5555-4555-8555-555555555555";
+    const draft = createRecommendationInsertDraft({
+      recipientUserId: otherRecipientUserId,
+    });
+    const { db } = createRecommendationInsertDbMock();
+
+    await expect(
+      insertRecommendationDraftsForUser(db as unknown as DbClient, currentUserId, [draft]),
+    ).resolves.toEqual({
+      inserted: [],
+      rejected: [
+        expect.objectContaining({
+          draft,
+          issues: [expect.objectContaining({ code: "ACTOR_MUST_MATCH_RECIPIENT" })],
+          ok: false,
+          pairKey: `${otherRecipientUserId}:${candidateRow.userId}`,
+        }),
+      ],
+    });
+    expect(db.select).toHaveBeenCalledTimes(2);
+    expect(db.insert).not.toHaveBeenCalled();
+  });
+
+  it("rejects self-recommendation insert drafts without calling db.insert", async () => {
+    const draft = createRecommendationInsertDraft({
+      recommendedUserId: currentUserId,
+      signalSnapshot: {
+        candidateUserId: currentUserId,
+        candidateVisibility: "campus",
+        completionStatus: "basic_complete",
+        profileVisibility: "campus",
+      },
+    });
+    const { db } = createRecommendationInsertDbMock();
+
+    await expect(
+      insertRecommendationDraftsForUser(db as unknown as DbClient, currentUserId, [draft]),
+    ).resolves.toEqual({
+      inserted: [],
+      rejected: [
+        expect.objectContaining({
+          draft,
+          issues: [expect.objectContaining({ code: "SELF_RECOMMENDATION_NOT_ALLOWED" })],
+          ok: false,
+          pairKey: `${currentUserId}:${currentUserId}`,
+        }),
+      ],
+    });
+    expect(db.select).toHaveBeenCalledTimes(2);
+    expect(db.insert).not.toHaveBeenCalled();
+  });
+
+  it("inserts only accepted recommendation drafts and returns rejected batch drafts", async () => {
+    const acceptedDraft = createRecommendationInsertDraft();
+    const duplicateDraft = createRecommendationInsertDraft();
+    const inactiveDraft = createRecommendationInsertDraft({
+      recommendedUserId: "55555555-5555-4555-8555-555555555555",
+      signalSnapshot: {
+        candidateUserId: "55555555-5555-4555-8555-555555555555",
+        candidateVisibility: "campus",
+        completionStatus: "basic_complete",
+        profileVisibility: "campus",
+      },
+      status: "dismissed",
+    });
+    const insertedRows = [
+      {
+        id: "77777777-7777-4777-8777-777777777777",
+        recommendedUserId: candidateRow.userId,
+        recipientUserId: currentUserId,
+        status: "active",
+      },
+    ];
+    const { db, insertQuery } = createRecommendationInsertDbMock({ insertedRows });
+
+    await expect(
+      insertRecommendationDraftsForUser(db as unknown as DbClient, currentUserId, [
+        acceptedDraft,
+        duplicateDraft,
+        inactiveDraft,
+      ]),
+    ).resolves.toEqual({
+      inserted: insertedRows,
+      rejected: [
+        expect.objectContaining({
+          draft: duplicateDraft,
+          issues: [expect.objectContaining({ code: "DUPLICATE_RECOMMENDATION_IN_BATCH" })],
+          ok: false,
+          pairKey: `${currentUserId}:${candidateRow.userId}`,
+        }),
+        expect.objectContaining({
+          draft: inactiveDraft,
+          issues: [expect.objectContaining({ code: "DRAFT_MUST_BE_ACTIVE" })],
+          ok: false,
+          pairKey: `${currentUserId}:55555555-5555-4555-8555-555555555555`,
+        }),
+      ],
+    });
+    expect(db.select).toHaveBeenCalledTimes(2);
+    expect(db.insert).toHaveBeenCalledOnce();
+    expect(insertQuery.values).toHaveBeenCalledWith([acceptedDraft]);
+    expect(insertQuery.returning).toHaveBeenCalledOnce();
+  });
+
+  it("reads persisted active recommendation rows as feed cards", async () => {
+    const row = createPersistedRecommendationFeedRow();
+    const query = createSelectQueryMock([row]);
+    const db = {
+      select: vi.fn(() => query),
+    };
+
+    await expect(
+      listPersistedRecommendationFeedCardsForUser(db as unknown as DbClient, currentUserId),
+    ).resolves.toEqual({
+      hasEnoughSignals: true,
+      items: [
+        expect.objectContaining({
+          conversationStarter: "Ask TypeScript Builder about Shared module: COMP1048.",
+          profileSummary: "Modules: COMP1048. Interests: web apps. Skills: react",
+          profileVisibility: "campus",
+          recommendationId: "77777777-7777-4777-8777-777777777777",
+          recommendedUserId: candidateRow.userId,
+        }),
+      ],
+    });
+    expect(db.select).toHaveBeenCalledOnce();
+    expect(query.from).toHaveBeenCalledOnce();
+    expect(query.innerJoin).toHaveBeenCalledOnce();
+    expect(query.where).toHaveBeenCalledOnce();
+    expect(query.orderBy).toHaveBeenCalledOnce();
+  });
+
   it("requires a completed academic profile before reading recommendations", async () => {
+    const query = createSelectQueryMock([]);
+    const db = {
+      select: vi.fn(() => query),
+    };
+
+    createDbMock.mockReturnValue(db);
     requireCompletedAcademicProfileMock.mockResolvedValue({
       canCreatePost: true,
       canViewOwnProfile: true,
@@ -598,6 +962,8 @@ describe("recommendation read service", () => {
       items: [],
     });
     expect(requireCompletedAcademicProfileMock).toHaveBeenCalledOnce();
+    expect(createDbMock).toHaveBeenCalledOnce();
+    expect(db.select).toHaveBeenCalledOnce();
   });
 
   it("requires a completed academic profile before reading recommendation candidates", async () => {
@@ -772,6 +1138,171 @@ describe("recommendation read service", () => {
     expect(query.limit).toHaveBeenCalledWith(10);
     expect(db).not.toHaveProperty("insert");
   });
+
+  it("persists accepted current user recommendation dry-run drafts", async () => {
+    const candidateQuery = createSelectQueryMock([candidateRow]);
+    const existingRecommendationsDryRunQuery = createSelectQueryMock([]);
+    const existingConnectionRequestsDryRunQuery = createSelectQueryMock([]);
+    const existingRecommendationsInsertQuery = createSelectQueryMock([]);
+    const existingConnectionRequestsInsertQuery = createSelectQueryMock([]);
+    const selectResults = [
+      candidateQuery,
+      existingRecommendationsDryRunQuery,
+      existingConnectionRequestsDryRunQuery,
+      existingRecommendationsInsertQuery,
+      existingConnectionRequestsInsertQuery,
+    ];
+    let selectIndex = 0;
+    const insertedRows = [
+      {
+        id: "77777777-7777-4777-8777-777777777777",
+        recommendedUserId: candidateRow.userId,
+        recipientUserId: currentUserId,
+        status: "active",
+      },
+    ];
+    const insertQuery = {
+      returning: vi.fn(async () => insertedRows),
+      values: vi.fn(() => insertQuery),
+    };
+    const db = {
+      insert: vi.fn(() => insertQuery),
+      select: vi.fn(() => selectResults[selectIndex++] ?? createSelectQueryMock([])),
+    };
+
+    createDbMock.mockReturnValue(db);
+    getAcademicProfileForUserMock.mockResolvedValue(currentProfile);
+    requireCompletedAcademicProfileMock.mockResolvedValue({
+      canCreatePost: true,
+      canViewOwnProfile: true,
+      nextRoute: "/feed",
+      profile: {
+        completionStatus: "basic_complete",
+        id: "11111111-1111-4111-8111-111111111111",
+      },
+      session: {
+        authUserId: "22222222-2222-4222-8222-222222222222",
+        email: "student@nottingham.edu.cn",
+        emailDomain: "nottingham.edu.cn",
+        emailVerified: true,
+        role: "student",
+        userId: currentUserId,
+        verifiedAt: "2026-01-02T03:04:05.000Z",
+      },
+      state: "profile_ready",
+    });
+
+    await expect(persistCurrentUserRecommendationDryRunDrafts({ limit: 10 })).resolves.toEqual({
+      inserted: insertedRows,
+      rejected: [],
+    });
+    expect(requireCompletedAcademicProfileMock).toHaveBeenCalledOnce();
+    expect(createDbMock).toHaveBeenCalledOnce();
+    expect(getAcademicProfileForUserMock).toHaveBeenCalledWith(db, currentUserId);
+    expect(db.select).toHaveBeenCalledTimes(5);
+    expect(candidateQuery.limit).toHaveBeenCalledWith(10);
+    expect(db.insert).toHaveBeenCalledOnce();
+    expect(insertQuery.values).toHaveBeenCalledWith([
+      expect.objectContaining({
+        llmProvider: "mock",
+        recommendedUserId: candidateRow.userId,
+        recipientUserId: currentUserId,
+        status: "active",
+      }),
+    ]);
+    expect(insertQuery.returning).toHaveBeenCalledOnce();
+  });
+
+  it("excludes already active recommendations from the persistence dry-run feed", async () => {
+    const { db, query } = createCandidateDbMock([candidateRow], {
+      existingRecommendations: [
+        {
+          recipientUserId: currentUserId,
+          recommendedUserId: candidateRow.userId,
+          status: "active",
+        },
+      ],
+    });
+
+    createDbMock.mockReturnValue(db);
+    getAcademicProfileForUserMock.mockResolvedValue(currentProfile);
+    requireCompletedAcademicProfileMock.mockResolvedValue({
+      canCreatePost: true,
+      canViewOwnProfile: true,
+      nextRoute: "/feed",
+      profile: {
+        completionStatus: "basic_complete",
+        id: "11111111-1111-4111-8111-111111111111",
+      },
+      session: {
+        authUserId: "22222222-2222-4222-8222-222222222222",
+        email: "student@nottingham.edu.cn",
+        emailDomain: "nottingham.edu.cn",
+        emailVerified: true,
+        role: "student",
+        userId: currentUserId,
+        verifiedAt: "2026-01-02T03:04:05.000Z",
+      },
+      state: "profile_ready",
+    });
+
+    await expect(getCurrentUserRecommendationPersistenceDryRun({ limit: 10 })).resolves.toEqual({
+      drafts: [],
+      dryRun: true,
+      hasEnoughSignals: false,
+      items: [],
+    });
+    expect(db.select).toHaveBeenCalledTimes(3);
+    expect(query.limit).toHaveBeenCalledWith(10);
+    expect(db).not.toHaveProperty("insert");
+  });
+
+  it.each(["pending", "accepted"] as const)(
+    "excludes candidates with an existing %s connection request from the persistence dry-run feed",
+    async (status) => {
+      const { db, query } = createCandidateDbMock([candidateRow], {
+        existingConnectionRequests: [
+          {
+            recipientId: currentUserId,
+            requesterId: candidateRow.userId,
+            status,
+          },
+        ],
+      });
+
+      createDbMock.mockReturnValue(db);
+      getAcademicProfileForUserMock.mockResolvedValue(currentProfile);
+      requireCompletedAcademicProfileMock.mockResolvedValue({
+        canCreatePost: true,
+        canViewOwnProfile: true,
+        nextRoute: "/feed",
+        profile: {
+          completionStatus: "basic_complete",
+          id: "11111111-1111-4111-8111-111111111111",
+        },
+        session: {
+          authUserId: "22222222-2222-4222-8222-222222222222",
+          email: "student@nottingham.edu.cn",
+          emailDomain: "nottingham.edu.cn",
+          emailVerified: true,
+          role: "student",
+          userId: currentUserId,
+          verifiedAt: "2026-01-02T03:04:05.000Z",
+        },
+        state: "profile_ready",
+      });
+
+      await expect(getCurrentUserRecommendationPersistenceDryRun({ limit: 10 })).resolves.toEqual({
+        drafts: [],
+        dryRun: true,
+        hasEnoughSignals: false,
+        items: [],
+      });
+      expect(db.select).toHaveBeenCalledTimes(3);
+      expect(query.limit).toHaveBeenCalledWith(10);
+      expect(db).not.toHaveProperty("insert");
+    },
+  );
 
   it("returns no scored candidates if the current profile cannot be loaded after the gate", async () => {
     const { db } = createCandidateDbMock([candidateRow]);
