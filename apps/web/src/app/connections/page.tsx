@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/status-badge";
 import type { Connection, ConnectionRequest } from "@/features/connections/schemas";
 import { respondToConnectionRequestAction } from "@/features/connections/server/actions";
 import { getConnectionsPageDataForUser } from "@/features/connections/server/service";
-import { requireCompletedAcademicProfile } from "@/server/auth/onboarding-gate";
+import { requirePageCompletedAcademicProfile } from "@/server/auth/redirects";
 import { createDb } from "@/server/db/client";
 
 export const dynamic = "force-dynamic";
@@ -57,6 +57,7 @@ function RequestActionForm({
 
   return (
     <form action={respondToConnectionRequestFormAction}>
+      <input name="next" type="hidden" value="/connections" />
       <input name="requestId" type="hidden" value={requestId} />
       <input name="action" type="hidden" value={action} />
       <button
@@ -175,7 +176,7 @@ function RejectedRequestCard({ request }: { request: ConnectionRequest }) {
 }
 
 export default async function ConnectionsPage() {
-  const gate = await requireCompletedAcademicProfile();
+  const gate = await requirePageCompletedAcademicProfile("/connections");
   const db = createDb();
   const data = await getConnectionsPageDataForUser(db, gate.session.userId);
 

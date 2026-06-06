@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/status-badge";
 import type { PostAuthorSummary, PostFeedItem } from "@/features/posts/schemas";
 import { getCurrentUserCampusFeed } from "@/features/posts/server/service";
 import { getPostAuthorProfileHref } from "@/features/posts/types";
+import { resolveProtectedPageData } from "@/server/auth/redirects";
 
 export const dynamic = "force-dynamic";
 
@@ -79,7 +80,7 @@ function FeedPostCard({ post }: { post: PostFeedItem }) {
 }
 
 export default async function FeedPage() {
-  const feed = await getCurrentUserCampusFeed();
+  const feed = await resolveProtectedPageData("/feed", () => getCurrentUserCampusFeed());
 
   return (
     <PageFrame

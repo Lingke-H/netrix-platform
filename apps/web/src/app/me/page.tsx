@@ -5,6 +5,7 @@ import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
 import type { AcademicProfile } from "@/features/profile/schemas";
 import { getCurrentUserProfileData } from "@/features/profile/server/service";
+import { resolveProtectedPageData } from "@/server/auth/redirects";
 
 export const dynamic = "force-dynamic";
 
@@ -97,7 +98,7 @@ function EmptyProfileState() {
 }
 
 export default async function MePage() {
-  const { gate, routeState } = await getCurrentUserProfileData();
+  const { gate, routeState } = await resolveProtectedPageData("/me", () => getCurrentUserProfileData());
 
   return (
     <PageFrame

@@ -8,6 +8,7 @@ import type { Major, StudyYear } from "@/features/profile/schemas";
 import type { Recommendation } from "@/features/recommendations/schemas";
 import { persistRecommendationDryRunDraftsAction } from "@/features/recommendations/server/actions";
 import { getCurrentUserRecommendationFeed } from "@/features/recommendations/server/service";
+import { resolveProtectedPageData } from "@/server/auth/redirects";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,7 @@ function GenerateRecommendationsPanel() {
       action={persistRecommendationsFormAction}
       className="flex flex-wrap items-center justify-between gap-4 border border-[var(--color-line)] bg-[var(--color-surface-strong)] p-5"
     >
+      <input name="next" type="hidden" value="/recommendations" />
       <div className="space-y-1">
         <h2 className="text-lg font-semibold text-[var(--color-ink)]">Generate persisted recommendations</h2>
         <p className="text-sm leading-6 text-[var(--color-muted)]">
@@ -101,6 +103,7 @@ function SignalList({ label, items }: { label: string; items: string[] }) {
 function RequestConnectionForm({ recommendation }: { recommendation: Extract<Recommendation, { canRequestConnect: true }> }) {
   return (
     <form action={createConnectionRequestFormAction} className="space-y-3 border border-[var(--color-line)] bg-[var(--color-surface-strong)] p-4">
+      <input name="next" type="hidden" value="/recommendations" />
       <input name="recommendationId" type="hidden" value={recommendation.recommendationId} />
       <input name="recipientId" type="hidden" value={recommendation.recommendedUserId} />
       <label className="block space-y-2">
@@ -177,7 +180,7 @@ function RecommendationCard({ recommendation }: { recommendation: Recommendation
 }
 
 export default async function RecommendationsPage() {
-  const recommendationFeed = await getCurrentUserRecommendationFeed();
+  const recommendationFeed = await resolveProtectedPageData("/recommendations", () => getCurrentUserRecommendationFeed());
 
   return (
     <PageFrame

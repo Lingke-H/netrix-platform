@@ -4,7 +4,7 @@ import { Send } from "lucide-react";
 import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
 import { createPostAction } from "@/features/posts/server/actions";
-import { getOnboardingGate } from "@/server/auth/onboarding-gate";
+import { requirePageOnboardingGate } from "@/server/auth/redirects";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +25,7 @@ function ProfileRequiredPrompt({ completionStatus }: { completionStatus: string 
         <StatusBadge>{completionStatus}</StatusBadge>
       </div>
       <Link
-        href="/onboarding?reason=profile-required"
+        href="/onboarding?reason=profile-required&next=%2Fposts%2Fnew"
         className="inline-flex bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[rgba(29,107,87,0.9)]"
       >
         Complete profile
@@ -35,7 +35,7 @@ function ProfileRequiredPrompt({ completionStatus }: { completionStatus: string 
 }
 
 export default async function NewPostPage() {
-  const gate = await getOnboardingGate();
+  const gate = await requirePageOnboardingGate("/posts/new");
   const completionStatus = gate.profile?.completionStatus ?? "incomplete";
 
   return (
@@ -48,6 +48,7 @@ export default async function NewPostPage() {
 
       {gate.canCreatePost ? (
       <form action={createPostAction} className="space-y-5">
+        <input name="next" type="hidden" value="/posts/new" />
         <div className="flex flex-wrap items-center gap-3">
           <StatusBadge tone="ready">requires completed profile</StatusBadge>
           <StatusBadge>server action</StatusBadge>

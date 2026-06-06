@@ -4,6 +4,7 @@ import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
 import type { PublicAcademicProfile } from "@/features/profile/schemas";
 import { getCurrentUserVisibleAcademicProfile } from "@/features/profile/server/service";
+import { resolveProtectedPageData } from "@/server/auth/redirects";
 
 export const dynamic = "force-dynamic";
 
@@ -69,7 +70,7 @@ function PublicProfileSummary({ profile }: { profile: PublicAcademicProfile }) {
 
 export default async function ProfilePage({ params }: ProfilePageProps) {
   const { id } = await params;
-  const profile = await getCurrentUserVisibleAcademicProfile(id);
+  const profile = await resolveProtectedPageData(`/profiles/${id}`, () => getCurrentUserVisibleAcademicProfile(id));
 
   if (!profile) {
     notFound();

@@ -26,7 +26,10 @@ const inputClass =
 const authErrorMessages: Record<string, string> = {
   "callback-failed": "The verification link could not be completed. Request a new campus email link.",
   "campus-email-required": "Use a valid UNNC campus email address ending in @nottingham.edu.cn.",
+  "auth-email-missing": "The active Supabase session does not include an email address. Sign in again with campus email.",
+  "auth-session-unavailable": "The campus auth session could not be used. Sign in again before continuing.",
   "email-link-failed": "Supabase could not send the verification email. Check the project configuration and try again.",
+  "email-verification-required": "Verify your campus email before continuing into NeTrix.",
   "missing-callback-code": "The verification link is missing its Supabase callback code.",
   "sign-out-failed": "The session could not be signed out. Try again from this page.",
   "supabase-env-missing": "Supabase URL and anon key must be configured before campus email sign-in can run.",

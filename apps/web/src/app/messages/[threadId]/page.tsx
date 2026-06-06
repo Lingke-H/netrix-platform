@@ -6,8 +6,9 @@ import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
 import type { Message, MessageThread } from "@/features/messages/schemas";
 import { createMessageAction } from "@/features/messages/server/actions";
-import { getCurrentUserAcceptedMessageThreadData } from "@/features/messages/server/service";
-import { requireCompletedAcademicProfile } from "@/server/auth/onboarding-gate";
+import { getAcceptedMessageThreadDataForUser } from "@/features/messages/server/service";
+import { requirePageCompletedAcademicProfile } from "@/server/auth/redirects";
+import { createDb } from "@/server/db/client";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,7 @@ function MessageBubble({ currentUserId, message }: { currentUserId: string; mess
 function MessageComposer({ threadId }: { threadId: string }) {
   return (
     <form action={createMessageFormAction} className="space-y-3 border border-[var(--color-line)] bg-white p-5">
+      <input name="next" type="hidden" value={`/messages/${threadId}`} />
       <input name="threadId" type="hidden" value={threadId} />
       <label className="block space-y-2">
         <span className="text-sm font-semibold text-[var(--color-ink)]">Message</span>
@@ -96,8 +98,9 @@ function MessageComposer({ threadId }: { threadId: string }) {
 }
 
 export default async function MessageThreadPage({ params }: MessageThreadPageProps) {
-  const [{ threadId }, gate] = await Promise.all([params, requireCompletedAcademicProfile()]);
-  const data = await getCurrentUserAcceptedMessageThreadData(threadId);
+  const { threadId } = await params;
+  const gate = await requirePageCompletedAcademicProfile(`/messages/${threadId}`);
+  const data = await getAcceptedMessageThreadDataForUser(createDb(), gate.session.userId, threadId);
 
   if (!data) {
     notFound();

@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/status-badge";
 import type { Post, PostAuthorSummary } from "@/features/posts/schemas";
 import { getCurrentUserPostDetail } from "@/features/posts/server/service";
 import { getPostAuthorProfileHref } from "@/features/posts/types";
+import { resolveProtectedPageData } from "@/server/auth/redirects";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +49,7 @@ function AuthorHeading({ author }: { author: PostAuthorSummary }) {
 
 export default async function PostDetailPage({ params }: PostDetailPageProps) {
   const { id } = await params;
-  const detail = await getCurrentUserPostDetail(id);
+  const detail = await resolveProtectedPageData(`/posts/${id}`, () => getCurrentUserPostDetail(id));
 
   if (!detail) {
     notFound();

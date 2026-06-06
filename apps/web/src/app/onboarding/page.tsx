@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/status-badge";
 import type { AcademicProfile } from "@/features/profile/schemas";
 import { upsertAcademicProfileAction } from "@/features/profile/server/actions";
 import { getCurrentUserProfileData } from "@/features/profile/server/service";
+import { resolveProtectedPageData } from "@/server/auth/redirects";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ const labelClass = "space-y-2 text-sm font-medium text-[var(--color-ink)]";
 
 type OnboardingPageProps = {
   searchParams: Promise<{
+    next?: string;
     reason?: string;
   }>;
 };
@@ -94,9 +96,10 @@ function ListField({
   );
 }
 
-function AcademicProfileForm({ profile }: { profile: AcademicProfile | null }) {
+function AcademicProfileForm({ nextRoute, profile }: { nextRoute: string; profile: AcademicProfile | null }) {
   return (
     <form action={upsertAcademicProfileAction} className="space-y-5">
+      <input name="next" type="hidden" value={nextRoute} />
       <div className="grid gap-4 md:grid-cols-3">
         <TextField
           name="nickname"
@@ -183,7 +186,10 @@ function ProfileRequiredNotice() {
 
 export default async function OnboardingPage({ searchParams }: OnboardingPageProps) {
   const query = await searchParams;
-  const { gate, routeState } = await getCurrentUserProfileData();
+  const currentRoute = query.next
+    ? `/onboarding?reason=${encodeURIComponent(query.reason ?? "")}&next=${encodeURIComponent(query.next)}`
+    : "/onboarding";
+  const { gate, routeState } = await resolveProtectedPageData(currentRoute, () => getCurrentUserProfileData());
   const showProfileRequiredNotice = query.reason === "profile-required";
 
   return (
@@ -200,7 +206,7 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
 
       {showProfileRequiredNotice ? <ProfileRequiredNotice /> : null}
 
-      <AcademicProfileForm profile={routeState.profile} />
+      <AcademicProfileForm nextRoute={query.next ?? "/feed"} profile={routeState.profile} />
     </PageFrame>
   );
 }

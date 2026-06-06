@@ -4,18 +4,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createCurrentUserPost } from "@/features/posts/server/service";
-import { isAcademicProfileRequiredError } from "@/server/auth/onboarding-gate";
+import { getActionNextRoute, redirectProtectedRouteError } from "@/server/auth/redirects";
 
 export async function createPostAction(input: unknown) {
   let result: Awaited<ReturnType<typeof createCurrentUserPost>>;
+  const nextRoute = getActionNextRoute(input, "/posts/new");
 
   try {
     result = await createCurrentUserPost(input);
   } catch (error) {
-    if (isAcademicProfileRequiredError(error)) {
-      redirect("/onboarding?reason=profile-required");
-    }
-
+    redirectProtectedRouteError(error, nextRoute);
     throw error;
   }
 
