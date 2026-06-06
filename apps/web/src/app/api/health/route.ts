@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
 
-export function GET() {
-  return NextResponse.json({
-    app: "netrix-web",
-    stage: "scaffold-baseline",
-    status: "ok",
-    timestamp: new Date().toISOString(),
+import { getDeploymentHealthReport } from "@/server/deployment/health";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+export async function GET() {
+  const report = await getDeploymentHealthReport();
+  const httpStatus = report.status === "error" ? 503 : 200;
+
+  return NextResponse.json(report, {
+    headers: {
+      "Cache-Control": "no-store",
+    },
+    status: httpStatus,
   });
 }

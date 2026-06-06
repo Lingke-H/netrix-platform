@@ -30,6 +30,7 @@ AI：服务端 LLM 封装层，支持提示词版本和结构校验
 | `system-architecture.md` | 定义运行边界、目录结构、功能模块组织、接口形态和环境配置。 | 全体开发者 |
 | `product-flow-and-frontend.md` | 定义核心用户路径、页面结构、组件范式、状态设计和视觉实现原则。 | 前端负责人，其他成员需了解 |
 | `data-ai-security.md` | 定义数据实体、权限矩阵、AI 契约、推荐流程、事件记录和安全约束。 | 后端负责人、AI 与质量负责人，前端需了解 |
+| `supabase-deployment-checklist.md` | 定义 Supabase Auth、回调 URL、邮件模板、密钥、数据库连接和 `/api/health` 的上线前检查。 | 后端、数据与认证负责人，部署负责人 |
 | `delivery-and-quality.md` | 定义开发节奏、PR 标准、测试策略、开工标准、完成标准和迭代验收。 | 全体开发者 |
 | `dev-starter-protocol.md` | 定义三人第一轮分工、任务依赖、日常协作方式和第一轮迭代产出。 | 全体开发者 |
 | `contracts-and-conventions.md` | 定义命名、目录、结构校验、服务端接口、环境变量、提示词版本和界面契约。 | 全体开发者 |
