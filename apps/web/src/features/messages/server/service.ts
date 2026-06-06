@@ -132,13 +132,32 @@ export function buildMessageThreadData(thread: MessageThreadReadRow, messageRows
 }
 
 export function parseCreateMessageInput(input: unknown): CreateMessageInput {
-  const parsedInput = createMessageInputSchema.safeParse(input);
+  const parsedInput = createMessageInputSchema.safeParse(
+    isFormData(input) ? normalizeCreateMessageFormData(input) : input,
+  );
 
   if (!parsedInput.success) {
     throw new CreateMessageError("Message input is invalid.", "MESSAGE_INPUT_INVALID");
   }
 
   return parsedInput.data;
+}
+
+function isFormData(input: unknown): input is FormData {
+  return typeof FormData !== "undefined" && input instanceof FormData;
+}
+
+function getFormText(formData: FormData, name: string) {
+  const value = formData.get(name);
+
+  return typeof value === "string" ? value : "";
+}
+
+export function normalizeCreateMessageFormData(formData: FormData) {
+  return {
+    body: getFormText(formData, "body"),
+    threadId: getFormText(formData, "threadId"),
+  };
 }
 
 export function guardMessageThreadRead({

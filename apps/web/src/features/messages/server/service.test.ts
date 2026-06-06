@@ -52,6 +52,17 @@ describe("accepted message create service", () => {
     });
   });
 
+  it("normalizes message form input", () => {
+    const formData = new FormData();
+    formData.set("body", "  Could we compare COMP1048 debugging notes?  ");
+    formData.set("threadId", threadId);
+
+    expect(parseCreateMessageInput(formData)).toEqual({
+      body: "Could we compare COMP1048 debugging notes?",
+      threadId,
+    });
+  });
+
   it("rejects invalid message input", () => {
     expect(() =>
       parseCreateMessageInput({
