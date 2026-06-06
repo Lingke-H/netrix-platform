@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   type AcademicProfileUpsertInput,
@@ -12,6 +12,10 @@ import {
   splitAcademicProfileFormList,
 } from "@/features/profile/server/service";
 import type { OnboardingGate } from "@/server/auth/onboarding-gate";
+
+vi.mock("@/server/events/record", () => ({
+  recordEvent: vi.fn(() => Promise.resolve({ id: "event-1" })),
+}));
 
 const userId = "11111111-1111-4111-8111-111111111111";
 

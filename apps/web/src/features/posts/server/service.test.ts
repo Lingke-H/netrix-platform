@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   buildCampusFeedData,
@@ -12,6 +12,10 @@ import {
   splitPostFormList,
 } from "@/features/posts/server/service";
 import { getPostAuthorProfileHref } from "@/features/posts/types";
+
+vi.mock("@/server/events/record", () => ({
+  recordEvent: vi.fn(() => Promise.resolve({ id: "event-1" })),
+}));
 
 const validInput = {
   body: "This is a concrete academic question about COMP1048 debugging patterns.",

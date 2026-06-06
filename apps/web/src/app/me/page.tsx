@@ -3,8 +3,10 @@ import { Check, Pencil, X } from "lucide-react";
 
 import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
+import type { AiJobRecord } from "@/server/ai/jobs";
 import type { AcademicPortrait, AcademicProfile } from "@/features/profile/schemas";
 import { getCurrentUserProfileData } from "@/features/profile/server/service";
+import { listCurrentUserJobs } from "@/server/ai/job-service";
 import { confirmPortraitAction, dismissPortraitAction } from "@/features/profile/server/portrait-actions";
 import { resolveProtectedPageData } from "@/server/auth/redirects";
 
@@ -177,6 +179,7 @@ function PortraitSection({ portrait }: { portrait: AcademicPortrait }) {
 
 export default async function MePage() {
   const { gate, routeState } = await resolveProtectedPageData("/me", () => getCurrentUserProfileData());
+  const jobs: AiJobRecord[] = gate.state === "profile_ready" ? await resolveProtectedPageData("/me", async () => listCurrentUserJobs(5)) : [];
 
   return (
     <PageFrame
@@ -193,6 +196,27 @@ export default async function MePage() {
       {routeState.profile ? <ProfileSummary profile={routeState.profile} /> : <EmptyProfileState />}
 
       {routeState.portrait ? <PortraitSection portrait={routeState.portrait} /> : null}
+
+      {jobs.length > 0 ? (
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold text-[var(--color-ink)]">Recent AI activity</h2>
+          <div className="space-y-2">
+            {jobs.map((job) => (
+              <div key={job.id} className="flex flex-wrap items-center gap-3 border border-[var(--color-line)] bg-white px-4 py-3">
+                <StatusBadge tone={job.status === "succeeded" ? "ready" : job.status === "failed" ? "caution" : "info"}>
+                  {job.status}
+                </StatusBadge>
+                <span className="text-xs font-medium text-[var(--color-muted)]">
+                  {job.type === "nickname" ? "Nickname" : job.type === "profile-portrait" ? "Portrait" : "Recommendation"}
+                </span>
+                <span className="text-xs text-[var(--color-muted)]">
+                  {new Date(job.createdAt).toLocaleString("en")}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </PageFrame>
   );
 }

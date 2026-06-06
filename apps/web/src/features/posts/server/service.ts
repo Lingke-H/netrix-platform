@@ -14,6 +14,7 @@ import { requireVerifiedCampusUser } from "@/server/auth/session";
 import { requireCompletedAcademicProfile } from "@/server/auth/onboarding-gate";
 import { createDb, type DbClient } from "@/server/db/client";
 import { academicProfiles, posts } from "@/server/db/schema";
+import { recordEvent } from "@/server/events/record";
 
 export type CreatePostResult = {
   postId: string;
@@ -258,6 +259,17 @@ export async function createPostForUser(
   if (!createdPost) {
     throw new CreatePostError("Unable to create the post.", "POST_CREATE_FAILED");
   }
+
+  await recordEvent(db, {
+    eventType: "post_created",
+    objectType: "post",
+    objectId: createdPost.id,
+    metadata: {
+      authorId: createdPost.authorId,
+      status: createdPost.status,
+      type: postInput.type,
+    },
+  }, authorId);
 
   return {
     authorId: createdPost.authorId,

@@ -15,6 +15,7 @@ import { createDb, type DbClient } from "@/server/db/client";
 import { academicProfiles } from "@/server/db/schema";
 import { academicPortraits } from "@/server/db/schema";
 import type { AcademicPortrait } from "@/features/profile/schemas";
+import { recordEvent } from "@/server/events/record";
 
 export type AcademicProfileUpsertInput = Omit<AcademicProfileFormInput, "completionStatus" | "userId">;
 
@@ -279,6 +280,16 @@ export async function upsertAcademicProfile(
   if (!profile || profile.completionStatus !== "basic_complete") {
     throw new AcademicProfileUpsertError("Unable to upsert the academic profile.", "PROFILE_UPSERT_FAILED");
   }
+
+  await recordEvent(db, {
+    eventType: "profile_completed",
+    objectType: "academic_profile",
+    objectId: profile.id,
+    metadata: {
+      userId: profile.userId,
+      completionStatus: profile.completionStatus,
+    },
+  }, userId);
 
   return {
     completionStatus: "basic_complete",
