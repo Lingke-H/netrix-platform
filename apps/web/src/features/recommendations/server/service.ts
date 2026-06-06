@@ -825,6 +825,43 @@ export async function buildRecommendationCardFromScoredCandidate(
   };
 }
 
+export async function buildRecommendationCardFromScoredCandidateWithJob(
+  db: DbClient,
+  actorUserId: string,
+  viewerProfile: RecommendationScoringProfile,
+  scoredCandidate: ScoredRecommendationCandidate,
+): Promise<RecommendationCardBuildResult> {
+  const result = await buildRecommendationCardFromScoredCandidate(viewerProfile, scoredCandidate);
+
+  if (!result.ok) {
+    await recordEvent(db, {
+      eventType: "recommendation_generated",
+      objectType: "recommendation",
+      objectId: scoredCandidate.candidate.userId,
+      metadata: {
+        recipientUserId: actorUserId,
+        recommendedUserId: scoredCandidate.candidate.userId,
+        error: "INVALID_RECOMMENDATION_EXPLANATION_OUTPUT",
+      },
+    }, actorUserId);
+
+    return result;
+  }
+
+  await recordEvent(db, {
+    eventType: "recommendation_generated",
+    objectType: "recommendation",
+    objectId: result.item.recommendationId,
+    metadata: {
+      recipientUserId: actorUserId,
+      recommendedUserId: result.item.recommendedUserId,
+      score: scoredCandidate.score,
+    },
+  }, actorUserId);
+
+  return result;
+}
+
 export function buildRecommendationInsertDraft({
   card,
   generation,
