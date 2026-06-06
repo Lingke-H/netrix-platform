@@ -14,6 +14,7 @@ import {
   messages,
   posts,
   recommendations,
+  resourceItems,
   users,
 } from "../../apps/web/src/server/db/schema";
 
@@ -36,6 +37,10 @@ export const demoDataIds = {
   postQuestion: "10000000-0000-4000-8000-000000000201",
   postResource: "10000000-0000-4000-8000-000000000202",
   recommendation: "10000000-0000-4000-8000-000000000501",
+  resourceItemMath: "10000000-0000-4000-8000-000000000801",
+  resourceItemCS: "10000000-0000-4000-8000-000000000802",
+  resourceItemEEE: "10000000-0000-4000-8000-000000000803",
+  resourceItemPromoted: "10000000-0000-4000-8000-000000000804",
   studyPartnerAuthUser: "10000000-0000-4000-8000-000000000103",
   studyPartnerUser: "10000000-0000-4000-8000-000000000003",
   thread: "10000000-0000-4000-8000-000000000701",
@@ -57,6 +62,16 @@ export async function seedDemoData(databaseUrl = process.env.DATABASE_URL) {
     await db.delete(connections).where(inArray(connections.id, [demoDataIds.acceptedConnection]));
     await db.delete(connectionRequests).where(inArray(connectionRequests.id, [demoDataIds.acceptedRequest]));
     await db.delete(recommendations).where(inArray(recommendations.id, [demoDataIds.recommendation]));
+    await db
+      .delete(resourceItems)
+      .where(
+        inArray(resourceItems.id, [
+          demoDataIds.resourceItemMath,
+          demoDataIds.resourceItemCS,
+          demoDataIds.resourceItemEEE,
+          demoDataIds.resourceItemPromoted,
+        ]),
+      );
     await db
       .delete(posts)
       .where(inArray(posts.id, [demoDataIds.postQuestion, demoDataIds.postResource, demoDataIds.postExperience]));
@@ -193,6 +208,54 @@ export async function seedDemoData(databaseUrl = process.env.DATABASE_URL) {
         type: "experience",
         updatedAt: new Date("2026-02-01T08:30:00.000Z"),
         visibility: "campus",
+      },
+    ]);
+
+    await db.insert(resourceItems).values([
+      {
+        createdAt: now,
+        curationStatus: "featured",
+        description: "Interactive visualisations for key COMP1048 React concepts, including state management, hooks, and component lifecycle patterns.",
+        id: demoDataIds.resourceItemCS,
+        modules: ["COMP1048"],
+        origin: "campus-resource",
+        tags: ["react", "visualisation", "coursework"],
+        title: "COMP1048 React Visualisation Toolkit",
+        url: "https://react.dev/learn",
+      },
+      {
+        createdAt: new Date("2026-02-01T08:15:00.000Z"),
+        curationStatus: "seeded",
+        description: "A curated problem set for MATH1031 calculus topics that appear in CS coursework, with worked solutions and practice exercises.",
+        id: demoDataIds.resourceItemMath,
+        modules: ["MATH1031"],
+        origin: "campus-resource",
+        tags: ["calculus", "problem-set", "coursework"],
+        title: "MATH1031 Calculus Problem Set with Solutions",
+        url: null,
+      },
+      {
+        createdAt: new Date("2026-02-01T08:25:00.000Z"),
+        curationStatus: "seeded",
+        description: "Ready-to-run MATLAB scripts and signal templates for ELEC2043 lab preparation, covering Fourier transforms and filter design.",
+        id: demoDataIds.resourceItemEEE,
+        modules: ["ELEC2043"],
+        origin: "campus-resource",
+        tags: ["matlab", "signals", "lab-prep"],
+        title: "ELEC2043 Signals Lab MATLAB Templates",
+        url: null,
+      },
+      {
+        createdAt: new Date("2026-02-01T08:35:00.000Z"),
+        curationStatus: "featured",
+        description: "A short checklist for narrowing TypeScript errors before asking for help: reproduce, isolate props, inspect union types, and add one focused test.",
+        id: demoDataIds.resourceItemPromoted,
+        modules: ["COMP1048"],
+        origin: "promoted-post",
+        sourcePostId: demoDataIds.postResource,
+        tags: ["typescript", "coursework", "debugging"],
+        title: "TypeScript narrowing checklist for coursework bugs",
+        url: null,
       },
     ]);
 
