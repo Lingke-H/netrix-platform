@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Clock, Link2, XCircle } from "lucide-react";
 
 import { PageFrame } from "@/components/page-frame";
@@ -119,12 +120,13 @@ function AcceptedConnectionCard({ connection, currentUserId }: { connection: Con
   const peerId = connection.userAId === currentUserId ? connection.userBId : connection.userAId;
 
   return (
-    <article className="space-y-3 border border-[var(--color-line)] bg-white p-5">
+    <article className="space-y-4 border border-[var(--color-line)] bg-white p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge tone="ready">{connection.status}</StatusBadge>
             <StatusBadge>accepted</StatusBadge>
+            {connection.messageThreadId ? <StatusBadge tone="ready">messages available</StatusBadge> : null}
           </div>
           <h2 className="text-lg font-semibold text-[var(--color-ink)]">Student {compactId(peerId)}</h2>
           <p className="text-sm leading-7 text-[var(--color-muted)]">
@@ -133,6 +135,19 @@ function AcceptedConnectionCard({ connection, currentUserId }: { connection: Con
         </div>
         <Link2 size={20} className="text-[var(--color-accent)]" aria-hidden="true" />
       </div>
+
+      {connection.messageThreadId ? (
+        <Link
+          href={`/messages/${connection.messageThreadId}`}
+          className="inline-flex h-9 items-center justify-center border border-[rgba(36,117,95,0.28)] bg-[var(--color-accent-soft)] px-3 text-sm font-semibold text-[var(--color-accent)] transition hover:bg-[rgba(36,117,95,0.16)]"
+        >
+          Open messages
+        </Link>
+      ) : (
+        <p className="text-sm leading-7 text-[var(--color-muted)]">
+          Message thread will appear after the accepted connection setup completes.
+        </p>
+      )}
     </article>
   );
 }

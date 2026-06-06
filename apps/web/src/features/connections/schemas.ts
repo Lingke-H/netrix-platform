@@ -22,6 +22,7 @@ export const connectionRequestSchema = z.object({
 
 export const connectionSchema = z.object({
   id: z.string().uuid(),
+  messageThreadId: z.string().uuid().nullable(),
   userAId: z.string().uuid(),
   userBId: z.string().uuid(),
   requestId: z.string().uuid(),

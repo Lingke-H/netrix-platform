@@ -85,6 +85,7 @@ export type ConnectionRequestReadRow = {
 export type ConnectionReadRow = {
   createdAt: Date;
   id: string;
+  messageThreadId: string | null;
   requestId: string;
   status: "active" | "archived";
   userAId: string;
@@ -193,6 +194,7 @@ export function buildConnectionDto(row: ConnectionReadRow): Connection {
   return connectionSchema.parse({
     createdAt: row.createdAt.toISOString(),
     id: row.id,
+    messageThreadId: row.messageThreadId,
     requestId: row.requestId,
     status: row.status,
     userAId: row.userAId,
@@ -516,12 +518,14 @@ export async function listAcceptedConnectionsForConnectionsPage(
     .select({
       createdAt: connections.createdAt,
       id: connections.id,
+      messageThreadId: messageThreads.id,
       requestId: connections.requestId,
       status: connections.status,
       userAId: connections.userAId,
       userBId: connections.userBId,
     })
     .from(connections)
+    .leftJoin(messageThreads, eq(messageThreads.connectionId, connections.id))
     .where(or(eq(connections.userAId, actorUserId), eq(connections.userBId, actorUserId)))
     .orderBy(desc(connections.createdAt));
 }

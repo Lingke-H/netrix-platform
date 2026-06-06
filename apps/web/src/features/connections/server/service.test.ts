@@ -502,6 +502,7 @@ describe("current user connections read service", () => {
   const connectionRow = {
     createdAt: new Date("2026-06-05T13:00:00.000Z"),
     id: connectionId,
+    messageThreadId: "99999999-9999-4999-8999-999999999999",
     requestId: "77777777-7777-4777-8777-777777777777",
     status: "active",
     userAId: requesterId,
@@ -527,6 +528,7 @@ describe("current user connections read service", () => {
     expect(buildConnectionDto(connectionRow)).toEqual({
       createdAt: "2026-06-05T13:00:00.000Z",
       id: connectionId,
+      messageThreadId: "99999999-9999-4999-8999-999999999999",
       requestId: "77777777-7777-4777-8777-777777777777",
       status: "active",
       userAId: requesterId,
