@@ -1,8 +1,8 @@
-import type { Major, PublicAcademicProfile, StudyYear } from "@/features/profile/schemas";
+import type { AcademicProfile, Major, StudyYear } from "@/features/profile/schemas";
 
 export type RecommendationScoringInput = {
-  recipientProfile: PublicAcademicProfile;
-  candidateProfile: PublicAcademicProfile;
+  recipientProfile: AcademicProfile;
+  candidateProfile: AcademicProfile;
 };
 
 export type RecommendationScoreSummary = Record<string, number | string | boolean | null>;

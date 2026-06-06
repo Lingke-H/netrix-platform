@@ -9,6 +9,7 @@ const serverEnvSchema = z.object({
   DATABASE_URL: z.string().min(1).optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   OPENAI_API_KEY: z.string().min(1).optional(),
+  OPENAI_MODEL: z.string().trim().min(1).optional(),
   APP_BASE_URL: z.string().url().optional(),
 });
 
@@ -24,6 +25,7 @@ export function getServerEnv() {
     DATABASE_URL: process.env.DATABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    OPENAI_MODEL: process.env.OPENAI_MODEL,
     APP_BASE_URL: process.env.APP_BASE_URL,
   });
 }

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { runCoreRecommendationPath } from "./core-path";
-import type { PublicAcademicProfile } from "@/features/profile/schemas";
+import type { AcademicProfile } from "@/features/profile/schemas";
 
-function buildProfile(overrides: Partial<PublicAcademicProfile>): PublicAcademicProfile {
+function buildProfile(overrides: Partial<AcademicProfile>): AcademicProfile {
   return {
     userId: "11111111-1111-1111-1111-111111111111",
     nickname: "Nova",
@@ -11,9 +11,12 @@ function buildProfile(overrides: Partial<PublicAcademicProfile>): PublicAcademic
     year: "year-2",
     modules: ["CS1010", "CS1231"],
     interests: ["machine learning", "algorithms"],
+    skillsOffered: ["python"],
+    helpNeeded: ["data structures"],
     collaborationPreferences: ["pair programming", "weekly check-ins"],
     visibility: "campus",
     completionStatus: "completed",
+    createdAt: "2026-06-05T00:00:00.000Z",
     updatedAt: "2026-06-05T00:00:00.000Z",
     ...overrides,
   };

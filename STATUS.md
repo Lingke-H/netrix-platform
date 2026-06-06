@@ -44,4 +44,6 @@ The first implementation milestone should be a demonstrable end-to-end path: a v
 
 The repository now contains executable application scaffold code under `apps/web`. The current baseline includes route skeletons, shared DTO and schema files, Drizzle table skeletons, AI schema placeholders, environment-variable examples, and root package scripts for the web app.
 
+During the latest AI/recommendation workstream update, the shared AI boundary was tightened further with a unified `apps/web/src/server/ai` export surface, output-structure validation, transparent recommendation scoring, a minimal core recommendation path, and event-recording helpers. The following checks were run successfully at workspace level: `corepack pnpm typecheck` and `corepack pnpm test`.
+
 The current verification family is active and passing at scaffold level: `corepack pnpm lint`, `corepack pnpm typecheck`, `corepack pnpm test`, `corepack pnpm build`, and `corepack pnpm test:e2e`. The current E2E script is a baseline placeholder with no scenario file yet; subsequent feature work should replace that placeholder with real end-to-end coverage.
