@@ -232,7 +232,9 @@ export function parseCreateConnectionRequestInput(input: unknown): CreateConnect
 }
 
 export function parseConnectionRequestAction(input: unknown): ConnectionRequestAction {
-  const parsedInput = connectionRequestActionSchema.safeParse(input);
+  const parsedInput = connectionRequestActionSchema.safeParse(
+    isFormData(input) ? normalizeConnectionRequestActionFormData(input) : input,
+  );
 
   if (!parsedInput.success) {
     throw new ConnectionRequestResponseError(
@@ -242,6 +244,23 @@ export function parseConnectionRequestAction(input: unknown): ConnectionRequestA
   }
 
   return parsedInput.data;
+}
+
+function isFormData(input: unknown): input is FormData {
+  return typeof FormData !== "undefined" && input instanceof FormData;
+}
+
+function getFormText(formData: FormData, name: string) {
+  const value = formData.get(name);
+
+  return typeof value === "string" ? value : "";
+}
+
+export function normalizeConnectionRequestActionFormData(formData: FormData) {
+  return {
+    action: getFormText(formData, "action"),
+    requestId: getFormText(formData, "requestId"),
+  };
 }
 
 function hasSameConnectionPair(

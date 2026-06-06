@@ -314,6 +314,17 @@ describe("connection request response service", () => {
     });
   });
 
+  it("normalizes connection request response form actions", () => {
+    const formData = new FormData();
+    formData.set("action", "reject");
+    formData.set("requestId", connectionRequestId);
+
+    expect(parseConnectionRequestAction(formData)).toEqual({
+      action: "reject",
+      requestId: connectionRequestId,
+    });
+  });
+
   it("rejects invalid connection request response actions", () => {
     expect(() =>
       parseConnectionRequestAction({
