@@ -1,33 +1,26 @@
 import { describe, expect, it } from "vitest";
 
-import { getAiPromptBundle, buildAiPipelineJob } from "./pipeline";
+import { buildAiPipelineJob, getAiPromptBundle } from "./pipeline";
 
 describe("getAiPromptBundle", () => {
-  it("returns prompt version and instructions for nickname", () => {
-    const bundle = getAiPromptBundle("nickname");
+  it("returns prompt instructions for recommendation explanation", () => {
+    const bundle = getAiPromptBundle("recommendation-explanation");
 
-    expect(bundle.kind).toBe("nickname");
-    expect(bundle.promptVersion).toBe("nickname.v1");
-    expect(bundle.instructions).toContain("JSON only");
+    expect(bundle.promptVersion).toBe("recommendation-explanation.v1");
+    expect(bundle.instructions).toContain("UNNC");
   });
 });
 
 describe("buildAiPipelineJob", () => {
-  it("builds a job summary for recommendation explanation", () => {
+  it("creates a successful job skeleton", () => {
     const job = buildAiPipelineJob({
-      kind: "recommendation-explanation",
+      kind: "nickname",
       userId: "11111111-1111-1111-1111-111111111111",
-      inputSummary: "shared module overlap",
-      output: {
-        explanationSummary: "Shared modules and complementary collaboration style.",
-        sharedSignals: ["共同课程模块: CS1010"],
-        complementarySignals: ["跨年级互补"],
-        conversationStarter: "Want to discuss your next assignment?",
-      },
+      inputSummary: "Need a nickname",
+      output: { suggestions: [{ nickname: "Nova", rationale: "Short" }] },
     });
 
-    expect(job.type).toBe("recommendation-explanation");
-    expect(job.promptVersion).toBe("recommendation-explanation.v1");
-    expect(job.outputSummary).toContain("Shared modules");
+    expect(job.type).toBe("nickname");
+    expect(job.promptVersion).toBe("nickname.v1");
   });
 });

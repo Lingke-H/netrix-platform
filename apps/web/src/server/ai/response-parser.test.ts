@@ -3,14 +3,17 @@ import { describe, expect, it } from "vitest";
 import { parseAiResponse } from "./response-parser";
 
 describe("parseAiResponse", () => {
-  it("parses nickname output", () => {
+  it("parses recommendation explanation output", () => {
     const result = parseAiResponse(
-      "nickname",
+      "recommendation-explanation",
       JSON.stringify({
-        suggestions: [{ nickname: "Nova", rationale: "Short and academic." }],
+        explanationSummary: "You share a module and a collaboration style.",
+        sharedSignals: ["共同课程模块: CS1010"],
+        complementarySignals: ["跨年级互补"],
+        conversationStarter: "You could discuss coursework together.",
       }),
     );
 
-    expect(result.suggestions[0]?.nickname).toBe("Nova");
+    expect(result.explanationSummary).toContain("module");
   });
 });

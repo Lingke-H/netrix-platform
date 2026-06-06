@@ -1,4 +1,4 @@
-import { getAiClient } from "./client";
+import { buildAiExecutionError, createAiExecutionRequest, executeAiRequest } from "./executor";
 import { aiPromptVersions } from "./contracts";
 import { createAiJobRecord, type CreateAiJobInput } from "./jobs";
 import {
@@ -9,6 +9,9 @@ import {
 import { buildNicknameSuggestions } from "./nickname";
 import { buildProfilePortrait } from "./profile-portrait";
 import { buildRecommendation } from "./recommendation";
+import { parseAiResponse } from "./response-parser";
+import { failAiJob, startAiJob, succeedAiJob } from "./job-state";
+import { recordEvent } from "@/server/events/record";
 import type { NicknameSuggestionOutput } from "./schemas/nickname";
 import type { ProfilePortraitOutput } from "./schemas/profile-portrait";
 import type { RecommendationExplanationOutput } from "./schemas/recommendation-explanation";
@@ -41,6 +44,18 @@ export type AiPromptBundle = {
   instructions: string;
 };
 
+export type AiPipelineRunResult =
+  | ReturnType<typeof buildNicknameSuggestions>
+  | ReturnType<typeof buildProfilePortrait>
+  | ReturnType<typeof buildRecommendation>;
+
+export type AiPipelineRunOutput = {
+  job: ReturnType<typeof createAiJobRecord>;
+  promptBundle: AiPromptBundle;
+  event: ReturnType<typeof recordEvent>;
+  result: AiPipelineRunResult;
+};
+
 export function getAiPromptBundle(kind: AiPipelineKind): AiPromptBundle {
   if (kind === "nickname") {
     return { kind, promptVersion: aiPromptVersions[kind], instructions: nicknamePromptInstructions };
@@ -68,40 +83,115 @@ export function buildAiPipelineJob(input: AiPipelineInput): CreateAiJobInput {
   };
 }
 
-export function runAiPipeline(input: AiPipelineInput) {
-  const aiClient = getAiClient();
-  void aiClient;
+export async function runAiPipeline(input: AiPipelineInput): Promise<AiPipelineRunOutput> {
+  const request = createAiExecutionRequest({
+    kind: input.kind,
+    userId: input.userId,
+    inputSummary: input.inputSummary,
+    userPrompt: input.inputSummary,
+  });
 
-  const job = createAiJobRecord(buildAiPipelineJob(input));
   const promptBundle = getAiPromptBundle(input.kind);
+  const job = createAiJobRecord({
+    ...buildAiPipelineJob(input),
+    status: startAiJob(),
+  });
 
-  if (input.kind === "nickname") {
-    return { job, promptBundle, result: buildNicknameSuggestions({ explanationOutput: input.output }) };
-  }
+  try {
+    const execution = await executeAiRequest(request);
+    const parsed = parseAiResponse(input.kind, execution.rawOutput);
 
-  if (input.kind === "profile-portrait") {
-    return {
-      job,
-      promptBundle,
-      result: buildProfilePortrait({
+    const finishedJob = createAiJobRecord({
+      ...job,
+      status: succeedAiJob(),
+      outputSummary: JSON.stringify(parsed),
+      completedAt: new Date().toISOString(),
+    });
+
+    const event = recordEvent({
+      eventType: input.kind === "profile-portrait" ? "ai_portrait_generated" : "recommendation_generated",
+      objectType: input.kind,
+      objectId: input.userId,
+      metadata: {
         userId: input.userId,
-        promptVersion: aiPromptVersions["profile-portrait"],
-        explanationOutput: input.output,
+        promptVersion: promptBundle.promptVersion,
+      },
+    });
+
+    if (input.kind === "nickname") {
+      return {
+        job: finishedJob,
+        promptBundle,
+        event,
+        result: buildNicknameSuggestions({ explanationOutput: parsed }),
+      };
+    }
+
+    if (input.kind === "profile-portrait") {
+      return {
+        job: finishedJob,
+        promptBundle,
+        event,
+        result: buildProfilePortrait({
+          userId: input.userId,
+          promptVersion: aiPromptVersions["profile-portrait"],
+          explanationOutput: parsed,
+        }),
+      };
+    }
+
+    return {
+      job: finishedJob,
+      promptBundle,
+      event,
+      result: buildRecommendation({
+        recommendationId: "00000000-0000-0000-0000-000000000000",
+        recommendedUserId: input.userId,
+        nickname: "Temp",
+        major: "other",
+        year: "foundation",
+        profileSummary: input.inputSummary,
+        explanationOutput: parsed,
+      }),
+    };
+  } catch (error) {
+    const aiError = buildAiExecutionError(input.kind, error instanceof Error ? error.message : "Unknown AI error");
+    const failedJob = createAiJobRecord({
+      ...job,
+      status: failAiJob(),
+      errorMessage: aiError.message,
+      completedAt: new Date().toISOString(),
+    });
+
+    const event = recordEvent({
+      eventType: input.kind === "profile-portrait" ? "ai_portrait_generated" : "recommendation_generated",
+      objectType: input.kind,
+      objectId: input.userId,
+      metadata: {
+        userId: input.userId,
+        promptVersion: promptBundle.promptVersion,
+        error: aiError.message,
+      },
+    });
+
+    return {
+      job: failedJob,
+      promptBundle,
+      event,
+      result: buildRecommendation({
+        recommendationId: "00000000-0000-0000-0000-000000000000",
+        recommendedUserId: input.userId,
+        nickname: "Temp",
+        major: "other",
+        year: "foundation",
+        profileSummary: input.inputSummary,
+        explanationOutput: {
+          explanationSummary: aiError.message,
+          sharedSignals: [],
+          complementarySignals: [],
+          conversationStarter: "Try again later.",
+        },
       }),
     };
   }
-
-  return {
-    job,
-    promptBundle,
-    result: buildRecommendation({
-      recommendationId: "00000000-0000-0000-0000-000000000000",
-      recommendedUserId: input.userId,
-      nickname: "Temp",
-      major: "other",
-      year: "foundation",
-      profileSummary: input.inputSummary,
-      explanationOutput: input.output,
-    }),
-  };
 }
