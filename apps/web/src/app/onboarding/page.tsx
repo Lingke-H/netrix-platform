@@ -1,9 +1,10 @@
-import { Save } from "lucide-react";
+import { Save, Sparkles } from "lucide-react";
 
 import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
 import type { AcademicProfile } from "@/features/profile/schemas";
 import { upsertAcademicProfileAction } from "@/features/profile/server/actions";
+import { onboardWithAiAction } from "@/features/ai/server/onboarding-actions";
 import { getCurrentUserProfileData } from "@/features/profile/server/service";
 import { resolveProtectedPageData } from "@/server/auth/redirects";
 
@@ -147,7 +148,7 @@ function AcademicProfileForm({ nextRoute, profile }: { nextRoute: string; profil
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+      <div className="grid gap-4 md:grid-cols-[1fr_auto_auto] md:items-end">
         <label className={labelClass}>
           Visibility
           <select name="visibility" defaultValue={profile?.visibility === "private" ? "private" : "campus"} className={inputClass}>
@@ -166,6 +167,15 @@ function AcademicProfileForm({ nextRoute, profile }: { nextRoute: string; profil
         >
           <Save size={16} aria-hidden="true" />
           Save profile
+        </button>
+
+        <button
+          type="submit"
+          formAction={onboardWithAiAction}
+          className="inline-flex items-center justify-center gap-2 border border-[rgba(36,117,95,0.28)] bg-[var(--color-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--color-accent)] transition hover:bg-[rgba(36,117,95,0.16)]"
+        >
+          <Sparkles size={16} aria-hidden="true" />
+          Save &amp; generate AI profile
         </button>
       </div>
     </form>
@@ -196,7 +206,7 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
     <PageFrame
       eyebrow="Onboarding"
       title="Academic Profile Setup"
-      description="Confirm the academic signals that unlock posting, your profile page, and later AI-assisted profile refinement."
+      description="Confirm the academic signals that unlock posting, your profile page, and AI-assisted profile refinement."
     >
       <div className="flex flex-wrap items-center gap-3">
         <StatusBadge tone={gate.state === "profile_ready" ? "ready" : "caution"}>{gate.state}</StatusBadge>

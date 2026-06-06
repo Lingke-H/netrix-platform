@@ -13,19 +13,27 @@ import { createDb } from "@/server/db/client";
 import { requireCurrentUser } from "@/server/auth/session";
 import { redirectProtectedRouteError } from "@/server/auth/redirects";
 
-export async function onboardWithAiAction(input: {
-  nickname: string;
-  major: string;
-  year: string;
-  modules: string;
-  interests: string;
-  skills: string;
-  helpOffered: string;
-  helpNeeded: string;
-  collaborationPreference: string;
-  visibility: string;
-  next?: string;
-}) {
+function getFormText(formData: FormData, name: string) {
+  const value = formData.get(name);
+
+  return typeof value === "string" ? value : "";
+}
+
+export async function onboardWithAiAction(formData: FormData) {
+  const input = {
+    collaborationPreference: getFormText(formData, "collaborationPreference"),
+    helpNeeded: getFormText(formData, "helpNeeded"),
+    helpOffered: getFormText(formData, "helpOffered"),
+    interests: getFormText(formData, "interests"),
+    major: getFormText(formData, "major"),
+    modules: getFormText(formData, "modules"),
+    nickname: getFormText(formData, "nickname"),
+    skills: getFormText(formData, "skills"),
+    visibility: getFormText(formData, "visibility"),
+    year: getFormText(formData, "year"),
+  };
+  const nextRoute = getFormText(formData, "next");
+
   const session = await requireCurrentUser();
   const db = createDb();
 
@@ -38,7 +46,7 @@ export async function onboardWithAiAction(input: {
       .filter(Boolean)
       .join(". ");
 
-    const [nicknameResult, portraitResult] = await Promise.allSettled([
+    await Promise.allSettled([
       runAiPipeline(
         {
           kind: "nickname",
@@ -88,13 +96,8 @@ export async function onboardWithAiAction(input: {
     revalidatePath("/me");
     revalidatePath("/onboarding");
     revalidatePath("/feed");
-
-    return {
-      nicknameStatus: nicknameResult.status,
-      portraitStatus: portraitResult.status,
-    };
   } catch (error) {
-    redirectProtectedRouteError(error, "/onboarding");
+    redirectProtectedRouteError(error, nextRoute || "/onboarding");
     throw error;
   }
 }
