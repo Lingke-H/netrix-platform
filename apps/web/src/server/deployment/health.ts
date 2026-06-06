@@ -1,6 +1,8 @@
 import postgres from "postgres";
 import { createClient } from "@supabase/supabase-js";
 
+import { authConfig } from "@/server/auth/config";
+
 export type DeploymentCheckStatus = "pass" | "warn" | "fail" | "skip";
 export type DeploymentHealthStatus = "ok" | "degraded" | "error";
 
@@ -27,8 +29,11 @@ export type DeploymentHealthReport = {
 type DeploymentEnv = {
   APP_BASE_URL?: string;
   DATABASE_URL?: string;
+  NETRIX_DEMO_AUTH_BYPASS_USER_ID?: string;
+  NETRIX_ENABLE_DEMO_AUTH_BYPASS?: string;
   NEXT_PUBLIC_SUPABASE_ANON_KEY?: string;
   NEXT_PUBLIC_SUPABASE_URL?: string;
+  OPENAI_API_KEY?: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
 };
 
@@ -89,6 +94,10 @@ export function buildDeploymentConfigChecks(env: DeploymentEnv): DeploymentCheck
   const hasAnonKey = present(env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
   const hasServiceRoleKey = present(env.SUPABASE_SERVICE_ROLE_KEY);
   const hasDatabaseUrl = present(env.DATABASE_URL);
+  const hasOpenAiKey = present(env.OPENAI_API_KEY);
+  const isDemoBypassEnabled =
+    present(env.NETRIX_ENABLE_DEMO_AUTH_BYPASS) &&
+    env.NETRIX_ENABLE_DEMO_AUTH_BYPASS !== "false";
 
   return [
     appBaseUrl
@@ -116,6 +125,17 @@ export function buildDeploymentConfigChecks(env: DeploymentEnv): DeploymentCheck
     getExpectedAuthCallbackUrl(env)
       ? buildCheck("AUTH_CALLBACK_URL", "warn", "Verify this URL is allowed in Supabase Auth redirect settings.")
       : buildCheck("AUTH_CALLBACK_URL", "fail", "Cannot derive /auth/callback until APP_BASE_URL is configured."),
+    isDemoBypassEnabled
+      ? buildCheck(
+          "DEMO_AUTH_BYPASS",
+          "warn",
+          "Demo auth bypass is enabled. This must be disabled in production deployments.",
+        )
+      : buildCheck("DEMO_AUTH_BYPASS", "pass", "Demo auth bypass is disabled."),
+    buildCheck("CAMPUS_EMAIL_DOMAIN", "pass", `Only ${authConfig.allowedEmailSuffixes.join(", ")} emails are accepted.`),
+    hasOpenAiKey
+      ? buildCheck("OPENAI_API_KEY", "pass", "OpenAI API key is present. LLM features are available.")
+      : buildCheck("OPENAI_API_KEY", "warn", "OpenAI API key is not configured. AI features will use fallback or be unavailable."),
   ];
 }
 
@@ -194,8 +214,11 @@ function getDeploymentEnv(env: DeploymentEnv | undefined): DeploymentEnv {
   return {
     APP_BASE_URL: process.env.APP_BASE_URL,
     DATABASE_URL: process.env.DATABASE_URL,
+    NETRIX_DEMO_AUTH_BYPASS_USER_ID: process.env.NETRIX_DEMO_AUTH_BYPASS_USER_ID,
+    NETRIX_ENABLE_DEMO_AUTH_BYPASS: process.env.NETRIX_ENABLE_DEMO_AUTH_BYPASS,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   };
 }

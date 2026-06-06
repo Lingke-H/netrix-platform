@@ -9,8 +9,11 @@ import {
 const completeEnv = {
   APP_BASE_URL: "https://netrix.example",
   DATABASE_URL: "postgres://user:password@db.example:5432/postgres",
+  NETRIX_DEMO_AUTH_BYPASS_USER_ID: "",
+  NETRIX_ENABLE_DEMO_AUTH_BYPASS: "false",
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key",
   NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
+  OPENAI_API_KEY: "",
   SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
 };
 
@@ -31,6 +34,35 @@ describe("deployment health checks", () => {
         expect.objectContaining({ name: "SUPABASE_SERVICE_ROLE_KEY", status: "pass" }),
         expect.objectContaining({ name: "DATABASE_URL", status: "pass" }),
         expect.objectContaining({ name: "AUTH_CALLBACK_URL", status: "warn" }),
+        expect.objectContaining({ name: "CAMPUS_EMAIL_DOMAIN", status: "pass" }),
+        expect.objectContaining({ name: "DEMO_AUTH_BYPASS", status: "pass" }),
+        expect.objectContaining({ name: "OPENAI_API_KEY", status: "warn" }),
+      ]),
+    );
+  });
+
+  it("flags demo auth bypass as a warning when enabled in deployment", () => {
+    const checks = buildDeploymentConfigChecks({
+      ...completeEnv,
+      NETRIX_ENABLE_DEMO_AUTH_BYPASS: "true",
+    });
+
+    expect(checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "DEMO_AUTH_BYPASS", status: "warn" }),
+      ]),
+    );
+  });
+
+  it("reports OPENAI_API_KEY as pass when configured", () => {
+    const checks = buildDeploymentConfigChecks({
+      ...completeEnv,
+      OPENAI_API_KEY: "sk-test-key",
+    });
+
+    expect(checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "OPENAI_API_KEY", status: "pass" }),
       ]),
     );
   });
@@ -88,5 +120,18 @@ describe("deployment health checks", () => {
     });
     expect(report.probes).toHaveLength(2);
     expect(report.probes.every((probe) => probe.status === "skip")).toBe(true);
+  });
+
+  it("reports ok status when all checks pass and probes are skipped", async () => {
+    const report = await getDeploymentHealthReport({
+      env: {
+        ...completeEnv,
+        OPENAI_API_KEY: "sk-test-key",
+      },
+      runRuntimeProbes: false,
+    });
+
+    expect(report.status).toBe("degraded");
+    expect(report.checks.every((check) => check.status !== "fail")).toBe(true);
   });
 });
