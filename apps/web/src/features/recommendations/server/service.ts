@@ -13,8 +13,12 @@ import {
   recommendationExplanationPromptVersion,
 } from "@/server/ai/prompts/recommendation-explanation.v1";
 import {
+  createConfiguredOpenAiJsonProvider,
   createMockOpenAiJsonProvider,
+  getConfiguredOpenAiJsonModelName,
+  type OpenAiJsonProvider,
   type OpenAiJsonRequest,
+  type OpenAiJsonResponseFormat,
   type OpenAiJsonUsage,
 } from "@/server/ai/provider";
 import {
@@ -95,13 +99,20 @@ export type RecommendationExplanationMockGenerationOptions = {
   usage?: Partial<OpenAiJsonUsage>;
 };
 
+export type RecommendationExplanationGenerationOptions = {
+  fallbackMockOutput?: unknown | ((request: OpenAiJsonRequest) => Promise<unknown> | unknown);
+  model?: string;
+  provider?: OpenAiJsonProvider | null;
+  temperature?: number;
+};
+
 export type RecommendationExplanationGenerationResult =
   | {
       explanation: RecommendationExplanationOutput;
       model: string;
       ok: true;
       promptVersion: typeof recommendationExplanationPromptVersion;
-      provider: "mock";
+      provider: "mock" | "openai";
       rawResponseId: string | null;
       usage: OpenAiJsonUsage;
     }
@@ -111,7 +122,7 @@ export type RecommendationExplanationGenerationResult =
       model: string;
       ok: false;
       promptVersion: typeof recommendationExplanationPromptVersion;
-      provider: "mock";
+      provider: "mock" | "openai";
       rawResponseId: string | null;
       usage: OpenAiJsonUsage;
     };
@@ -242,6 +253,37 @@ const recommendationScoringWeights = {
   moduleOverlap: 3,
   skillOverlap: 2,
 } as const;
+
+const recommendationExplanationResponseFormat = {
+  description: "Explain an academic connection recommendation using only supplied structured signals.",
+  name: "recommendation_explanation",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      complementarySignals: {
+        items: {
+          type: "string",
+        },
+        type: "array",
+      },
+      conversationStarter: {
+        type: "string",
+      },
+      explanationSummary: {
+        type: "string",
+      },
+      sharedSignals: {
+        items: {
+          type: "string",
+        },
+        type: "array",
+      },
+    },
+    required: ["explanationSummary", "sharedSignals", "complementarySignals", "conversationStarter"],
+    type: "object",
+  },
+  strict: true,
+} satisfies OpenAiJsonResponseFormat;
 
 export function buildEmptyRecommendationFeedData(): RecommendationFeedData {
   return {
@@ -626,6 +668,55 @@ export async function generateRecommendationExplanationWithMockProvider(
   };
 }
 
+export async function generateRecommendationExplanation(
+  viewerProfile: RecommendationScoringProfile,
+  scoredCandidate: ScoredRecommendationCandidate,
+  options: RecommendationExplanationGenerationOptions = {},
+): Promise<RecommendationExplanationGenerationResult> {
+  const promptPayload = buildRecommendationExplanationPromptPayload(viewerProfile, scoredCandidate);
+  const provider = options.provider === undefined ? createConfiguredOpenAiJsonProvider() : options.provider;
+
+  if (provider) {
+    const model = options.model ?? getConfiguredOpenAiJsonModelName();
+    const response = await provider.generateJson({
+      messages: promptPayload.messages,
+      model,
+      promptVersion: promptPayload.promptVersion,
+      responseFormat: recommendationExplanationResponseFormat,
+      temperature: options.temperature ?? 0.2,
+    });
+    const parsedOutput = parseRecommendationExplanationOutput(response.output);
+    const metadata = {
+      model: response.model,
+      promptVersion: promptPayload.promptVersion,
+      provider: response.provider,
+      rawResponseId: response.rawResponseId,
+      usage: response.usage,
+    };
+
+    if (!parsedOutput.ok) {
+      return {
+        ...metadata,
+        code: parsedOutput.code,
+        issues: parsedOutput.issues,
+        ok: false,
+      };
+    }
+
+    return {
+      ...metadata,
+      explanation: parsedOutput.output,
+      ok: true,
+    };
+  }
+
+  return generateRecommendationExplanationWithMockProvider(viewerProfile, scoredCandidate, {
+    mockOutput: options.fallbackMockOutput ?? buildMockRecommendationExplanationOutput(scoredCandidate),
+    model: "mock-recommendation-explainer",
+    temperature: options.temperature,
+  });
+}
+
 function buildCandidateProfileSummary(candidate: Pick<RecommendationCandidateProfile, "interests" | "modules" | "skills">) {
   const summaryParts = [
     candidate.modules.length > 0 ? `Modules: ${candidate.modules.slice(0, 3).join(", ")}` : null,
@@ -716,9 +807,7 @@ export async function buildRecommendationCardFromScoredCandidate(
   viewerProfile: RecommendationScoringProfile,
   scoredCandidate: ScoredRecommendationCandidate,
 ): Promise<RecommendationCardBuildResult> {
-  const explanationResult = await generateRecommendationExplanationWithMockProvider(viewerProfile, scoredCandidate, {
-    mockOutput: buildMockRecommendationExplanationOutput(scoredCandidate),
-  });
+  const explanationResult = await generateRecommendationExplanation(viewerProfile, scoredCandidate);
 
   if (!explanationResult.ok) {
     return {
@@ -1037,9 +1126,7 @@ export async function buildRecommendationPersistenceDryRunForUser(
   const seenRecommendationPairs = new Set<string>();
   const buildResults = await Promise.all(
     scoredCandidates.map(async (scoredCandidate) => {
-      const generation = await generateRecommendationExplanationWithMockProvider(profile, scoredCandidate, {
-        mockOutput: buildMockRecommendationExplanationOutput(scoredCandidate),
-      });
+      const generation = await generateRecommendationExplanation(profile, scoredCandidate);
 
       if (!generation.ok) {
         return null;

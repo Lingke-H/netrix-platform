@@ -5,6 +5,7 @@ import { recommendationFeedFixture } from "@/features/recommendations/test-fixtu
 import type { AcademicProfile } from "@/features/profile/schemas";
 import type { DbClient } from "@/server/db/client";
 import { recommendationExplanationInputSchema } from "@/server/ai/schemas/recommendation-explanation";
+import type { OpenAiJsonProvider, OpenAiJsonRequest, OpenAiJsonResponse } from "@/server/ai/provider";
 
 const requireCompletedAcademicProfileMock = vi.hoisted(() => vi.fn());
 const createDbMock = vi.hoisted(() => vi.fn());
@@ -30,6 +31,7 @@ import {
   buildRecommendationExplanationPromptPayload,
   buildRecommendationInsertDraft,
   buildPersistedRecommendationCard,
+  generateRecommendationExplanation,
   generateRecommendationExplanationWithMockProvider,
   getCurrentUserRecommendationCards,
   getCurrentUserRecommendationCandidates,
@@ -596,6 +598,75 @@ describe("recommendation read service", () => {
     );
   });
 
+  it("generates parsed recommendation explanations through an injected OpenAI provider", async () => {
+    const scoredCandidate = scoreRecommendationCandidate(
+      viewerScoringProfile,
+      buildRecommendationCandidateProfile(candidateRow),
+    );
+    const providerCalls: OpenAiJsonRequest[] = [];
+    const provider: OpenAiJsonProvider = {
+      async generateJson<TOutput = unknown>(
+        providerRequest: OpenAiJsonRequest,
+      ): Promise<OpenAiJsonResponse<TOutput>> {
+        providerCalls.push(providerRequest);
+
+        return {
+          model: providerRequest.model,
+          output: {
+            complementarySignals: ["Candidate can help with TypeScript debugging"],
+            conversationStarter: "Ask how they usually debug COMP1048 React issues.",
+            explanationSummary: "You share COMP1048 and web app interests, with complementary TypeScript support.",
+            sharedSignals: ["COMP1048", "web apps"],
+          } as TOutput,
+          provider: "openai",
+          rawResponseId: "resp_recommendation_1",
+          usage: {
+            inputTokens: 64,
+            outputTokens: 48,
+          },
+        };
+      },
+    };
+
+    await expect(
+      generateRecommendationExplanation(viewerScoringProfile, scoredCandidate, {
+        model: "gpt-4.1-mini",
+        provider,
+      }),
+    ).resolves.toEqual({
+      explanation: {
+        complementarySignals: ["Candidate can help with TypeScript debugging"],
+        conversationStarter: "Ask how they usually debug COMP1048 React issues.",
+        explanationSummary: "You share COMP1048 and web app interests, with complementary TypeScript support.",
+        sharedSignals: ["COMP1048", "web apps"],
+      },
+      model: "gpt-4.1-mini",
+      ok: true,
+      promptVersion: "recommendation-explanation.v1",
+      provider: "openai",
+      rawResponseId: "resp_recommendation_1",
+      usage: {
+        inputTokens: 64,
+        outputTokens: 48,
+      },
+    });
+    expect(providerCalls).toEqual([
+      expect.objectContaining({
+        messages: [
+          expect.objectContaining({ role: "system" }),
+          expect.objectContaining({ role: "user" }),
+        ],
+        model: "gpt-4.1-mini",
+        promptVersion: "recommendation-explanation.v1",
+        responseFormat: expect.objectContaining({
+          name: "recommendation_explanation",
+          strict: true,
+        }),
+        temperature: 0.2,
+      }),
+    ]);
+  });
+
   it("returns stable errors when mock recommendation explanation output is invalid", async () => {
     const scoredCandidate = scoreRecommendationCandidate(
       viewerScoringProfile,
@@ -756,6 +827,68 @@ describe("recommendation read service", () => {
     });
     expect(cardResult.item.recommendationId).toBe("44444444-4444-4444-8444-444444444444");
     expect(db.insert).not.toHaveBeenCalled();
+  });
+
+  it("stores OpenAI generation metadata in recommendation insert drafts", async () => {
+    const scoredCandidate = scoreRecommendationCandidate(
+      viewerScoringProfile,
+      buildRecommendationCandidateProfile(candidateRow),
+    );
+    const cardResult = await buildRecommendationCardFromScoredCandidate(viewerScoringProfile, scoredCandidate);
+    const provider: OpenAiJsonProvider = {
+      async generateJson<TOutput = unknown>(
+        providerRequest: OpenAiJsonRequest,
+      ): Promise<OpenAiJsonResponse<TOutput>> {
+        return {
+          model: providerRequest.model,
+          output: {
+            complementarySignals: ["Candidate can help with: typescript debugging"],
+            conversationStarter: "Ask TypeScript Builder about Shared module: COMP1048.",
+            explanationSummary:
+              "TypeScript Builder is recommended because of Shared module: COMP1048 and Candidate can help with: typescript debugging.",
+            sharedSignals: [
+              "Shared module: COMP1048",
+              "Shared interest: web apps",
+              "Shared skill: react",
+              "Shared collaboration preference: pair study",
+            ],
+          } as TOutput,
+          provider: "openai",
+          rawResponseId: "resp_recommendation_1",
+          usage: {
+            inputTokens: 64,
+            outputTokens: 48,
+          },
+        };
+      },
+    };
+    const generationResult = await generateRecommendationExplanation(viewerScoringProfile, scoredCandidate, {
+      model: "gpt-4.1-mini",
+      provider,
+    });
+
+    if (!cardResult.ok || cardResult.item.profileVisibility !== "campus" || !generationResult.ok) {
+      throw new Error("Expected a persistable recommendation card and successful OpenAI generation result.");
+    }
+
+    expect(
+      buildRecommendationInsertDraft({
+        card: cardResult.item,
+        generation: generationResult,
+        recipientUserId: currentUserId,
+        scoredCandidate,
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        llmModel: "gpt-4.1-mini",
+        llmProvider: "openai",
+        llmRawResponseId: "resp_recommendation_1",
+        llmUsage: {
+          inputTokens: 64,
+          outputTokens: 48,
+        },
+      }),
+    );
   });
 
   it("rejects blocked recommendation insert drafts without calling db.insert", async () => {
