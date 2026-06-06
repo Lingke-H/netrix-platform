@@ -32,6 +32,7 @@ import { requireCompletedAcademicProfile } from "@/server/auth/onboarding-gate";
 import { createDb, type DbClient } from "@/server/db/client";
 import { academicProfiles, connectionRequests, recommendations } from "@/server/db/schema";
 import { assertPermissionScope } from "@/server/permissions";
+import { recordEvent } from "@/server/events/record";
 
 export type RecommendationCandidateProfileRow = {
   collaborationPreference: string[];
@@ -1041,6 +1042,21 @@ export async function insertRecommendationDraftsForUser(
       recommendedUserId: recommendations.recommendedUserId,
       status: recommendations.status,
     });
+
+  await Promise.all(
+    inserted.map((row) =>
+      recordEvent(db, {
+        eventType: "recommendation_generated",
+        objectType: "recommendation",
+        objectId: row.id,
+        metadata: {
+          recipientUserId: row.recipientUserId,
+          recommendedUserId: row.recommendedUserId,
+          status: row.status,
+        },
+      }, actorUserId),
+    ),
+  );
 
   return {
     inserted,

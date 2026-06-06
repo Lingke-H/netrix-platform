@@ -23,6 +23,10 @@ vi.mock("@/server/db/client", () => ({
   createDb: createDbMock,
 }));
 
+vi.mock("@/server/events/record", () => ({
+  recordEvent: vi.fn(() => Promise.resolve({ id: "event-1" })),
+}));
+
 import {
   buildEmptyRecommendationFeedData,
   buildRecommendationCandidateProfile,
