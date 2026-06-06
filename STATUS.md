@@ -31,6 +31,7 @@ Business and technical work should now move from broad ideation into structured 
 | User validation | The 60-response survey has been analysed at aggregate level in `docs/business/survey-analysis/`; results remain exploratory early evidence rather than conclusive proof. | Targeted interviews with Math, CS, and EEE students. |
 | Content seeding | Demo seed data now covers verified users, academic profiles, Q&A, Resource, and Experience posts, a persisted recommendation, an accepted connection, a message thread, and starter messages. | Expand seed coverage into resource-library items and additional Math / CS / EEE interview-test scenarios. |
 | Recommendation logic | The initial recommendation service now combines transparent rule scoring with persisted recommendation cards, OpenAI provider activation, and demo recommendation data. | Add production-grade generation job tracking, monitoring, and richer post-derived recommendation signals. |
+| Authentication entry | `/auth` now uses Supabase campus email link sign-in and callback handling, with demo auth bypass restricted to local development or explicit Playwright E2E runs. | Add hosted Supabase email-template/configuration checks once the deployment target is selected. |
 
 ## Near-Term Execution Sequence
 
@@ -45,5 +46,7 @@ The first implementation milestone should be a demonstrable end-to-end path: a v
 The repository now contains executable application scaffold code under `apps/web`. The current baseline includes route skeletons, shared DTO and schema files, Drizzle table skeletons, AI schema placeholders, environment-variable examples, and root package scripts for the web app.
 
 During the latest AI/recommendation workstream update, the shared AI boundary was tightened further with a unified `apps/web/src/server/ai` export surface, task-based model/provider selection for the SillyTavern-compatible deployment path, prompt builders, an execution/request layer, response parsing, job-state helpers, output-structure validation, transparent recommendation scoring, a minimal core recommendation path, event-recording helpers, persisted recommendation cards, and OpenAI provider activation. The AI flow now includes nickname, academic portrait, and recommendation-explanation paths with dedicated schema validation and tests, and demo seed data now exercises the first loop from posts and profiles through recommendations, accepted connections, and messages.
+
+The auth entry now uses Supabase email link sign-in for `@nottingham.edu.cn` accounts, exchanges callback codes through `/auth/callback`, provisions the application user row from verified Supabase sessions, and keeps demo bypass available only for local development or explicit E2E support.
 
 The current verification family is active: `corepack pnpm lint`, `corepack pnpm typecheck`, `corepack pnpm test`, `corepack pnpm build`, and `corepack pnpm test:e2e`. The E2E suite now includes a real Playwright scenario for the seeded posts -> profile -> recommendation -> accepted connection -> message path. When `DATABASE_URL` is unavailable, the E2E scenario is explicitly skipped rather than treated as a missing-test success.

@@ -4,6 +4,7 @@ import {
   buildCurrentUserSession,
   getAuthEmailVerifiedAt,
   getCampusEmailIdentity,
+  isDemoAuthBypassRuntimeAllowed,
   isAllowedCampusEmail,
 } from "@/server/auth/session";
 
@@ -51,5 +52,12 @@ describe("auth session helpers", () => {
       userId: "00000000-0000-0000-0000-000000000002",
       verifiedAt: "2026-01-02T03:04:05.000Z",
     });
+  });
+
+  it("limits demo auth bypass to local development or explicit E2E runs", () => {
+    expect(isDemoAuthBypassRuntimeAllowed({ NODE_ENV: "development" })).toBe(true);
+    expect(isDemoAuthBypassRuntimeAllowed({ NETRIX_E2E: "true", NODE_ENV: "test" })).toBe(true);
+    expect(isDemoAuthBypassRuntimeAllowed({ NODE_ENV: "production", NETRIX_E2E: "true" })).toBe(false);
+    expect(isDemoAuthBypassRuntimeAllowed({ NODE_ENV: "test" })).toBe(false);
   });
 });

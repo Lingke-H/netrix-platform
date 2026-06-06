@@ -1,5 +1,5 @@
 export const authConfig = {
   campusEmailDomain: "nottingham.edu.cn",
   allowedEmailSuffixes: ["@nottingham.edu.cn"],
-  authPolicyStatus: "scaffold-ready",
+  authPolicyStatus: "supabase-email-link",
 } as const;

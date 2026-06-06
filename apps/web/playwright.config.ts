@@ -18,6 +18,7 @@ export default defineConfig({
           ...process.env,
           NETRIX_DEMO_AUTH_BYPASS_USER_ID: "10000000-0000-4000-8000-000000000001",
           NETRIX_ENABLE_DEMO_AUTH_BYPASS: "true",
+          NETRIX_E2E: "true",
         },
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

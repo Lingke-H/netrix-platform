@@ -82,7 +82,7 @@ export function getAuthEmailVerifiedAt(authUser: Pick<SupabaseUser, "email_confi
   return Number.isNaN(verifiedAt.getTime()) ? null : verifiedAt;
 }
 
-async function createSupabaseSessionClient() {
+export async function createSupabaseSessionClient() {
   const { NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_SUPABASE_URL } = getClientEnv();
 
   if (!NEXT_PUBLIC_SUPABASE_URL || !NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -167,11 +167,16 @@ export function buildCurrentUserSession(authUser: Pick<SupabaseUser, "id">, appU
   } satisfies CurrentUserSession;
 }
 
+export function isDemoAuthBypassRuntimeAllowed(env: NodeJS.ProcessEnv = process.env) {
+  return env.NODE_ENV !== "production" && (env.NODE_ENV === "development" || env.NETRIX_E2E === "true");
+}
+
 async function getDemoBypassCurrentUser(): Promise<CurrentUserSession | null> {
   const { NETRIX_DEMO_AUTH_BYPASS_USER_ID, NETRIX_ENABLE_DEMO_AUTH_BYPASS } = getServerEnv();
 
   if (
     process.env.NODE_ENV === "production" ||
+    !isDemoAuthBypassRuntimeAllowed() ||
     NETRIX_ENABLE_DEMO_AUTH_BYPASS !== "true" ||
     !NETRIX_DEMO_AUTH_BYPASS_USER_ID
   ) {
