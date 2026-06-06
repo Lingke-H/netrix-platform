@@ -1179,6 +1179,17 @@ export async function buildRecommendationPersistenceDryRunForUser(
   const seenRecommendationPairs = new Set<string>();
   const buildResults = await Promise.all(
     scoredCandidates.map(async (scoredCandidate) => {
+      const cardResult = await buildRecommendationCardFromScoredCandidateWithJob(
+        db,
+        actorUserId,
+        profile,
+        scoredCandidate,
+      );
+
+      if (!cardResult.ok) {
+        return null;
+      }
+
       const generation = await generateRecommendationExplanation(profile, scoredCandidate);
 
       if (!generation.ok) {
