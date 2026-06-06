@@ -4,11 +4,13 @@ import { revalidatePath } from "next/cache";
 
 import {
   runAiPipeline,
-  upsertPortrait,
+  persistAiPortrait,
   confirmNickname,
 } from "@/server/ai";
 import { buildNicknameSuggestions } from "@/server/ai/nickname";
 import { buildProfilePortrait } from "@/server/ai/profile-portrait";
+import { createAiJobRecord } from "@/server/ai/jobs";
+import { startAiJob } from "@/server/ai/job-state";
 import {
   normalizeAcademicProfileFormData,
   upsertAcademicProfile,
@@ -65,17 +67,15 @@ export async function onboardWithAiAction(formData: FormData) {
           promptVersion: "profile-portrait.v1",
           explanationOutput: portraitPipeline.result,
         });
-        await upsertPortrait(db, {
-          collaborationDraft: portrait.collaborationDraft,
-          generatedAt: new Date().toISOString(),
-          promptVersion: "profile-portrait.v1",
-          sourceSnapshot: {},
-          status: "draft",
-          strengthsDraft: portrait.strengthsDraft,
-          suggestedTags: portrait.suggestedTags,
-          summary: portrait.summary,
+        const job = createAiJobRecord({
           userId: session.userId,
+          type: "profile-portrait",
+          status: startAiJob(),
+          promptVersion: "profile-portrait.v1",
+          inputSummary: profileSummary,
+          outputSummary: portrait.summary,
         });
+        await persistAiPortrait(db, job, portrait);
         return portraitPipeline;
       }),
     ]);
