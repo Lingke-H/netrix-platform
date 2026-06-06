@@ -13,6 +13,7 @@ import { requireCompletedAcademicProfile } from "@/server/auth/onboarding-gate";
 import { createDb, type DbClient } from "@/server/db/client";
 import { connections, messages, messageThreads } from "@/server/db/schema";
 import { assertPermissionScope, canAccessMessages } from "@/server/permissions";
+import { recordEvent } from "@/server/events/record";
 
 export type MessageThreadReadRow = {
   connectionId: string;
@@ -453,6 +454,16 @@ export async function createMessageForUser(
     if (!updatedThread) {
       throw new CreateMessageError("Unable to update the message thread.", "MESSAGE_CREATE_FAILED");
     }
+
+    await recordEvent(db, {
+      eventType: "message_sent",
+      objectType: "message",
+      objectId: createdMessage.id,
+      metadata: {
+        threadId: guard.thread.id,
+        senderId: actorUserId,
+      },
+    }, actorUserId);
 
     return buildMessageDto(createdMessage);
   });

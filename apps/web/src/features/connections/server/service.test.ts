@@ -17,6 +17,10 @@ import {
 } from "@/features/connections/server/service";
 import type { DbClient } from "@/server/db/client";
 
+vi.mock("@/server/events/record", () => ({
+  recordEvent: vi.fn(() => Promise.resolve({ id: "event-1" })),
+}));
+
 const requesterId = "11111111-1111-4111-8111-111111111111";
 const recipientId = "22222222-2222-4222-8222-222222222222";
 const recommendationId = "33333333-3333-4333-8333-333333333333";

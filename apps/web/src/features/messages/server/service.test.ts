@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   buildMessageDto,
@@ -11,6 +11,10 @@ import {
   type MessageReadRow,
   type MessageThreadReadRow,
 } from "@/features/messages/server/service";
+
+vi.mock("@/server/events/record", () => ({
+  recordEvent: vi.fn(() => Promise.resolve({ id: "event-1" })),
+}));
 
 const actorUserId = "11111111-1111-4111-8111-111111111111";
 const peerUserId = "22222222-2222-4222-8222-222222222222";

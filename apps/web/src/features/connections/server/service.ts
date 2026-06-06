@@ -14,6 +14,7 @@ import type { ConnectionsPageData } from "@/features/connections/types";
 import { createDb, type DbClient } from "@/server/db/client";
 import { connectionRequests, connections, messageThreads, recommendations } from "@/server/db/schema";
 import { assertPermissionScope } from "@/server/permissions";
+import { recordEvent } from "@/server/events/record";
 import { requireCompletedAcademicProfile } from "@/server/auth/onboarding-gate";
 
 export type ConnectionRequestCreateResult = {
@@ -620,6 +621,17 @@ export async function createConnectionRequestForUser(
       );
     }
 
+    await recordEvent(db, {
+      eventType: "connection_requested",
+      objectType: "connection_request",
+      objectId: createdRequest.id,
+      metadata: {
+        requesterId: createdRequest.requesterId,
+        recipientId: createdRequest.recipientId,
+        recommendationId: parsedInput.recommendationId,
+      },
+    }, actorUserId);
+
     return {
       id: createdRequest.id,
       recommendationId: createdRequest.recommendationId,
@@ -760,6 +772,17 @@ export async function respondToConnectionRequestForUser(
         "CONNECTION_REQUEST_RESPONSE_FAILED",
       );
     }
+
+    await recordEvent(db, {
+      eventType: "connection_accepted",
+      objectType: "connection",
+      objectId: createdConnection.id,
+      metadata: {
+        requesterId: updatedRequest.requesterId,
+        recipientId: updatedRequest.recipientId,
+        requestId: updatedRequest.id,
+      },
+    }, actorUserId);
 
     return {
       connection: {
