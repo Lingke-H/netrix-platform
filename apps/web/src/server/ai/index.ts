@@ -11,6 +11,7 @@ export { buildNicknameSuggestions, type NicknameCandidateInput } from "./nicknam
 export { buildProfilePortrait, type ProfilePortraitCandidateInput } from "./profile-portrait";
 export { buildRecommendation, type RecommendationCandidateInput } from "./recommendation";
 export { runCoreRecommendationPath, type CorePathInput, type CorePathResult } from "./core-path";
+export { runAiPipeline, type AiPipelineKind, type AiPipelineInput, type AiPipelineRunOutput } from "./pipeline";
 export { scoreRecommendationMatch, type RecommendationScoringInput, type RecommendationSignalBundle } from "./scoring";
 export {
   createJob,
