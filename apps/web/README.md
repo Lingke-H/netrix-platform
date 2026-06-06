@@ -44,7 +44,7 @@ corepack pnpm build
 corepack pnpm test:e2e
 ```
 
-当前 `test:e2e` 仍是占位基线，尚未包含真实场景脚本。后续迭代应补上针对核心闭环的端到端测试。
+当前 `test:e2e` 已包含基于 demo seed data 的真实 Playwright 场景，覆盖 feed、profile、recommendations、connections 和 messages 路径。若未配置 `DATABASE_URL`，该场景会明确跳过。
 
 ## 4. 目录地图
 

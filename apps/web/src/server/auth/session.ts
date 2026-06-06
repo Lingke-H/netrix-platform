@@ -1,8 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { eq } from "drizzle-orm";
 
-import { getClientEnv } from "@/lib/env";
+import { getClientEnv, getServerEnv } from "@/lib/env";
 import { authConfig } from "@/server/auth/config";
 import { createDb, type DbClient } from "@/server/db/client";
 import { users } from "@/server/db/schema";
@@ -166,7 +167,45 @@ export function buildCurrentUserSession(authUser: Pick<SupabaseUser, "id">, appU
   } satisfies CurrentUserSession;
 }
 
+async function getDemoBypassCurrentUser(): Promise<CurrentUserSession | null> {
+  const { NETRIX_DEMO_AUTH_BYPASS_USER_ID, NETRIX_ENABLE_DEMO_AUTH_BYPASS } = getServerEnv();
+
+  if (
+    process.env.NODE_ENV === "production" ||
+    NETRIX_ENABLE_DEMO_AUTH_BYPASS !== "true" ||
+    !NETRIX_DEMO_AUTH_BYPASS_USER_ID
+  ) {
+    return null;
+  }
+
+  const db = createDb();
+  const [appUser] = await db
+    .select({
+      authUserId: users.authUserId,
+      email: users.email,
+      emailDomain: users.emailDomain,
+      id: users.id,
+      role: users.role,
+      verifiedAt: users.verifiedAt,
+    })
+    .from(users)
+    .where(eq(users.id, NETRIX_DEMO_AUTH_BYPASS_USER_ID))
+    .limit(1);
+
+  if (!appUser) {
+    throw new AuthSessionError("The configured demo auth bypass user does not exist.", "APP_USER_PROVISIONING_FAILED");
+  }
+
+  return buildCurrentUserSession({ id: appUser.authUserId }, appUser);
+}
+
 export async function getCurrentUser(): Promise<CurrentUserSession | null> {
+  const demoSession = await getDemoBypassCurrentUser();
+
+  if (demoSession) {
+    return demoSession;
+  }
+
   const supabase = await createSupabaseSessionClient();
   const {
     data: { user: authUser },

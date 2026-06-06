@@ -24,6 +24,8 @@ const serverEnvSchema = z.object({
   OPENAI_API_KEY: optionalNonEmptyString,
   OPENAI_MODEL: optionalTrimmedNonEmptyString,
   APP_BASE_URL: optionalUrl,
+  NETRIX_ENABLE_DEMO_AUTH_BYPASS: optionalTrimmedNonEmptyString,
+  NETRIX_DEMO_AUTH_BYPASS_USER_ID: optionalTrimmedNonEmptyString,
 });
 
 export function getClientEnv() {
@@ -40,5 +42,7 @@ export function getServerEnv() {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     OPENAI_MODEL: process.env.OPENAI_MODEL,
     APP_BASE_URL: process.env.APP_BASE_URL,
+    NETRIX_ENABLE_DEMO_AUTH_BYPASS: process.env.NETRIX_ENABLE_DEMO_AUTH_BYPASS,
+    NETRIX_DEMO_AUTH_BYPASS_USER_ID: process.env.NETRIX_DEMO_AUTH_BYPASS_USER_ID,
   });
 }
