@@ -1,48 +1,63 @@
 import { recordEvent } from "@/server/events/record";
+import { updateJobStatus } from "./job-service";
+import { upsertPortrait } from "./portrait-service";
 import type { AiJobRecord } from "./jobs";
 import type { AcademicPortrait } from "@/features/profile/schemas";
-import type { Recommendation } from "@/features/recommendations/schemas";
+import type { DbClient } from "@/server/db/client";
 
 export type PersistedAiPortrait = {
   job: AiJobRecord;
   portrait: AcademicPortrait;
-  event: ReturnType<typeof recordEvent>;
 };
 
 export type PersistedAiRecommendation = {
   job: AiJobRecord;
-  recommendation: Recommendation;
-  event: ReturnType<typeof recordEvent>;
 };
 
 export type PersistedAiNicknameDraft = {
   job: AiJobRecord;
-  event: ReturnType<typeof recordEvent>;
 };
 
-export function persistAiPortrait(job: AiJobRecord, portrait: AcademicPortrait): PersistedAiPortrait {
-  const event = recordEvent({
+export async function persistAiPortrait(
+  db: DbClient,
+  job: AiJobRecord,
+  portrait: AcademicPortrait,
+): Promise<PersistedAiPortrait> {
+  const upsertedPortrait = await upsertPortrait(db, {
+    collaborationDraft: portrait.collaborationDraft,
+    generatedAt: portrait.generatedAt,
+    promptVersion: portrait.promptVersion,
+    sourceSnapshot: portrait.sourceSnapshot,
+    status: portrait.status,
+    strengthsDraft: portrait.strengthsDraft,
+    suggestedTags: portrait.suggestedTags,
+    summary: portrait.summary,
+    userId: portrait.userId,
+  });
+
+  const updatedJob = await updateJobStatus(db, job.id, "succeeded", portrait.summary);
+
+  await recordEvent(db, {
     eventType: "ai_portrait_generated",
     objectType: "academic_portrait",
-    objectId: portrait.id,
+    objectId: upsertedPortrait.id,
     metadata: {
       userId: portrait.userId,
       promptVersion: portrait.promptVersion,
     },
-  });
+  }, portrait.userId);
 
-  return {
-    job,
-    portrait,
-    event,
-  };
+  return { job: updatedJob, portrait: upsertedPortrait };
 }
 
-export function persistAiRecommendation(
+export async function persistAiRecommendation(
+  db: DbClient,
   job: AiJobRecord,
-  recommendation: Recommendation,
-): PersistedAiRecommendation {
-  const event = recordEvent({
+  recommendation: { recommendationId: string; recommendedUserId: string; status: string },
+): Promise<PersistedAiRecommendation> {
+  const updatedJob = await updateJobStatus(db, job.id, "succeeded", recommendation.recommendationId);
+
+  await recordEvent(db, {
     eventType: "recommendation_generated",
     objectType: "recommendation",
     objectId: recommendation.recommendationId,
@@ -50,17 +65,18 @@ export function persistAiRecommendation(
       recommendedUserId: recommendation.recommendedUserId,
       status: recommendation.status,
     },
-  });
+  }, job.userId);
 
-  return {
-    job,
-    recommendation,
-    event,
-  };
+  return { job: updatedJob };
 }
 
-export function persistAiNicknameDraft(job: AiJobRecord): PersistedAiNicknameDraft {
-  const event = recordEvent({
+export async function persistAiNicknameDraft(
+  db: DbClient,
+  job: AiJobRecord,
+): Promise<PersistedAiNicknameDraft> {
+  const updatedJob = await updateJobStatus(db, job.id, "succeeded");
+
+  await recordEvent(db, {
     eventType: "ai_portrait_generated",
     objectType: "nickname_draft",
     objectId: job.id,
@@ -68,10 +84,7 @@ export function persistAiNicknameDraft(job: AiJobRecord): PersistedAiNicknameDra
       userId: job.userId,
       promptVersion: job.promptVersion,
     },
-  });
+  }, job.userId);
 
-  return {
-    job,
-    event,
-  };
+  return { job: updatedJob };
 }

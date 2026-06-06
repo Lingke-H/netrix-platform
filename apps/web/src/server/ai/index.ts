@@ -12,3 +12,31 @@ export { buildProfilePortrait, type ProfilePortraitCandidateInput } from "./prof
 export { buildRecommendation, type RecommendationCandidateInput } from "./recommendation";
 export { runCoreRecommendationPath, type CorePathInput, type CorePathResult } from "./core-path";
 export { scoreRecommendationMatch, type RecommendationScoringInput, type RecommendationSignalBundle } from "./scoring";
+export {
+  createJob,
+  updateJobStatus,
+  getJobById,
+  listJobsForUser,
+  getCurrentUserJob,
+  listCurrentUserJobs,
+  AiJobError,
+} from "./job-service";
+export {
+  upsertPortrait,
+  getPortraitForUser,
+  confirmPortrait,
+  dismissPortrait,
+  getCurrentUserPortrait,
+  upsertCurrentUserPortrait,
+  confirmCurrentUserPortrait,
+  dismissCurrentUserPortrait,
+  AcademicPortraitError,
+} from "./portrait-service";
+export {
+  persistAiPortrait,
+  persistAiRecommendation,
+  persistAiNicknameDraft,
+  type PersistedAiPortrait,
+  type PersistedAiRecommendation,
+  type PersistedAiNicknameDraft,
+} from "./persist";

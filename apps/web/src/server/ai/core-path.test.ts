@@ -46,7 +46,6 @@ describe("runCoreRecommendationPath", () => {
     expect(result.recommendation.recommendationId).toBe(
       "33333333-3333-3333-3333-333333333333",
     );
-    expect(result.event.eventType).toBe("recommendation_generated");
     expect(result.scoring.scoreSummary.totalScore).toBeGreaterThan(0);
   });
 });

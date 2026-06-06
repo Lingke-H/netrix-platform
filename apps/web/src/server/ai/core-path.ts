@@ -1,6 +1,5 @@
 import { buildRecommendation } from "./recommendation";
 import { scoreRecommendationMatch } from "./scoring";
-import { recordEvent } from "@/server/events/record";
 import type { AcademicProfile } from "@/features/profile/schemas";
 import type { Recommendation } from "@/features/recommendations/schemas";
 
@@ -17,7 +16,6 @@ export type CorePathInput = {
 export type CorePathResult = {
   recommendation: Recommendation;
   scoring: ReturnType<typeof scoreRecommendationMatch>;
-  event: ReturnType<typeof recordEvent>;
 };
 
 export function runCoreRecommendationPath(input: CorePathInput): CorePathResult {
@@ -37,20 +35,8 @@ export function runCoreRecommendationPath(input: CorePathInput): CorePathResult 
     status: "active",
   });
 
-  const event = recordEvent({
-    eventType: "recommendation_generated",
-    objectType: "recommendation",
-    objectId: input.recommendationId,
-    metadata: {
-      recipientUserId: input.recipientProfile.userId,
-      recommendedUserId: input.recommendedUserId,
-      totalScore: scoring.scoreSummary.totalScore as number,
-    },
-  });
-
   return {
     recommendation,
     scoring,
-    event,
   };
 }

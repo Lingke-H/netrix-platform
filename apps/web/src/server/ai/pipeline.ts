@@ -1,6 +1,7 @@
 import { buildAiExecutionError, createAiExecutionRequest, executeAiRequest } from "./executor";
 import { aiPromptVersions } from "./contracts";
 import { createAiJobRecord, type CreateAiJobInput } from "./jobs";
+import { createJob } from "./job-service";
 import {
   nicknamePromptInstructions,
   profilePortraitPromptInstructions,
@@ -15,6 +16,7 @@ import { recordEvent } from "@/server/events/record";
 import type { NicknameSuggestionOutput } from "./schemas/nickname";
 import type { ProfilePortraitOutput } from "./schemas/profile-portrait";
 import type { RecommendationExplanationOutput } from "./schemas/recommendation-explanation";
+import type { DbClient } from "@/server/db/client";
 
 export type AiPipelineKind = "nickname" | "profile-portrait" | "recommendation-explanation";
 
@@ -49,10 +51,13 @@ export type AiPipelineRunResult =
   | ReturnType<typeof buildProfilePortrait>
   | ReturnType<typeof buildRecommendation>;
 
+export type AiPipelineRunOptions = {
+  db: DbClient;
+};
+
 export type AiPipelineRunOutput = {
   job: ReturnType<typeof createAiJobRecord>;
   promptBundle: AiPromptBundle;
-  event: ReturnType<typeof recordEvent>;
   result: AiPipelineRunResult;
 };
 
@@ -83,7 +88,8 @@ export function buildAiPipelineJob(input: AiPipelineInput): CreateAiJobInput {
   };
 }
 
-export async function runAiPipeline(input: AiPipelineInput): Promise<AiPipelineRunOutput> {
+export async function runAiPipeline(input: AiPipelineInput, options: AiPipelineRunOptions): Promise<AiPipelineRunOutput> {
+  const { db } = options;
   const request = createAiExecutionRequest({
     kind: input.kind,
     userId: input.userId,
@@ -92,7 +98,8 @@ export async function runAiPipeline(input: AiPipelineInput): Promise<AiPipelineR
   });
 
   const promptBundle = getAiPromptBundle(input.kind);
-  const job = createAiJobRecord({
+
+  const job = await createJob(db, {
     ...buildAiPipelineJob(input),
     status: startAiJob(),
   });
@@ -108,21 +115,20 @@ export async function runAiPipeline(input: AiPipelineInput): Promise<AiPipelineR
       completedAt: new Date().toISOString(),
     });
 
-    const event = recordEvent({
+    await recordEvent(db, {
       eventType: input.kind === "profile-portrait" ? "ai_portrait_generated" : "recommendation_generated",
       objectType: input.kind,
-      objectId: input.userId,
+      objectId: job.id,
       metadata: {
         userId: input.userId,
         promptVersion: promptBundle.promptVersion,
       },
-    });
+    }, input.userId);
 
     if (input.kind === "nickname") {
       return {
         job: finishedJob,
         promptBundle,
-        event,
         result: buildNicknameSuggestions({ explanationOutput: parsed }),
       };
     }
@@ -131,7 +137,6 @@ export async function runAiPipeline(input: AiPipelineInput): Promise<AiPipelineR
       return {
         job: finishedJob,
         promptBundle,
-        event,
         result: buildProfilePortrait({
           userId: input.userId,
           promptVersion: aiPromptVersions["profile-portrait"],
@@ -143,7 +148,6 @@ export async function runAiPipeline(input: AiPipelineInput): Promise<AiPipelineR
     return {
       job: finishedJob,
       promptBundle,
-      event,
       result: buildRecommendation({
         recommendationId: "00000000-0000-0000-0000-000000000000",
         recommendedUserId: input.userId,
@@ -163,21 +167,20 @@ export async function runAiPipeline(input: AiPipelineInput): Promise<AiPipelineR
       completedAt: new Date().toISOString(),
     });
 
-    const event = recordEvent({
+    await recordEvent(db, {
       eventType: input.kind === "profile-portrait" ? "ai_portrait_generated" : "recommendation_generated",
       objectType: input.kind,
-      objectId: input.userId,
+      objectId: job.id,
       metadata: {
         userId: input.userId,
         promptVersion: promptBundle.promptVersion,
         error: aiError.message,
       },
-    });
+    }, input.userId);
 
     return {
       job: failedJob,
       promptBundle,
-      event,
       result: buildRecommendation({
         recommendationId: "00000000-0000-0000-0000-000000000000",
         recommendedUserId: input.userId,
