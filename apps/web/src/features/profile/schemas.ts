@@ -18,15 +18,18 @@ export const studyYearSchema = z.enum([
   "postgraduate",
 ]);
 
-export const profileVisibilitySchema = z.enum(["campus", "connections", "private"]);
+export const visibilitySchema = z.enum(["private", "campus", "public"]);
 
-export const profileCompletionStatusSchema = z.enum(["not_started", "draft", "completed"]);
+export const profileCompletionStatusSchema = z.enum([
+  "incomplete",
+  "basic_complete",
+  "recommendation_ready",
+]);
 
 export const academicPortraitStatusSchema = z.enum([
-  "not_requested",
   "draft",
-  "generated",
   "confirmed",
+  "dismissed",
   "failed",
 ]);
 
@@ -37,10 +40,11 @@ export const academicProfileSchema = z.object({
   year: studyYearSchema,
   modules: z.array(z.string().trim().min(1).max(80)).max(12),
   interests: z.array(z.string().trim().min(1).max(80)).max(12),
-  skillsOffered: z.array(z.string().trim().min(1).max(80)).max(10),
+  skills: z.array(z.string().trim().min(1).max(80)).max(10),
+  helpOffered: z.array(z.string().trim().min(1).max(80)).max(10),
   helpNeeded: z.array(z.string().trim().min(1).max(80)).max(10),
-  collaborationPreferences: z.array(z.string().trim().min(1).max(80)).max(8),
-  visibility: profileVisibilitySchema,
+  collaborationPreference: z.array(z.string().trim().min(1).max(80)).max(8),
+  visibility: visibilitySchema,
   completionStatus: profileCompletionStatusSchema,
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
@@ -54,14 +58,15 @@ export const academicProfileFormInputSchema = academicProfileSchema.omit({
 export const academicPortraitSchema = z.object({
   id: z.string().uuid(),
   userId: z.string().uuid(),
-  summary: z.string().trim().min(1).max(500),
-  currentFocus: z.array(z.string().trim().min(1).max(100)).max(6),
-  collaborationStyle: z.string().trim().min(1).max(240),
-  strengths: z.array(z.string().trim().min(1).max(100)).max(6),
-  suggestedTopics: z.array(z.string().trim().min(1).max(100)).max(6),
+  sourceSnapshot: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.array(z.string()), z.null()])),
+  summary: z.string().trim().min(1).max(500).nullable(),
+  suggestedTags: z.array(z.string().trim().min(1).max(100)).max(6),
+  strengthsDraft: z.array(z.string().trim().min(1).max(100)).max(6),
+  collaborationDraft: z.string().trim().min(1).max(240).nullable(),
   status: academicPortraitStatusSchema,
-  promptVersion: z.string().trim().min(1).max(80),
+  promptVersion: z.string().trim().min(1).max(80).nullable(),
   generatedAt: z.string().datetime().nullable(),
+  confirmedAt: z.string().datetime().nullable(),
 });
 
 export const publicAcademicProfileSchema = academicProfileSchema.pick({
@@ -71,7 +76,7 @@ export const publicAcademicProfileSchema = academicProfileSchema.pick({
   year: true,
   modules: true,
   interests: true,
-  collaborationPreferences: true,
+  collaborationPreference: true,
   visibility: true,
   completionStatus: true,
   updatedAt: true,
@@ -79,7 +84,7 @@ export const publicAcademicProfileSchema = academicProfileSchema.pick({
 
 export type Major = z.infer<typeof majorSchema>;
 export type StudyYear = z.infer<typeof studyYearSchema>;
-export type ProfileVisibility = z.infer<typeof profileVisibilitySchema>;
+export type Visibility = z.infer<typeof visibilitySchema>;
 export type ProfileCompletionStatus = z.infer<typeof profileCompletionStatusSchema>;
 export type AcademicPortraitStatus = z.infer<typeof academicPortraitStatusSchema>;
 export type AcademicProfile = z.infer<typeof academicProfileSchema>;

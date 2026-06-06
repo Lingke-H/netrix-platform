@@ -34,7 +34,7 @@ export function runCoreRecommendationPath(input: CorePathInput): CorePathResult 
     year: input.candidateProfile.year,
     profileSummary: input.profileSummary,
     explanationOutput: input.explanationOutput,
-    status: "generated",
+    status: "active",
   });
 
   const event = recordEvent({

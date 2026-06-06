@@ -64,6 +64,12 @@ Drizzle 结构是数据库结构的 TypeScript 源头。输入校验、server ac
 
 前端组件接收 DTO，不接收数据库原始对象。DTO 应只包含页面需要展示或操作需要提交的字段，避免把私密字段、服务端专用字段或 AI 任务内部信息暴露给组件。
 
+可见性字段统一使用 `private`、`campus`、`public`。第一版 MVP 的界面不开放 `public` 选项；前端表单默认提交 `campus`，私密草稿或不应被发现的内容提交 `private`。后端和 RLS 仍应识别 `public`，但在正式开放前不得把 `public` 当作默认值或通过界面暴露给用户。
+
+`profile.visibility` 与 `post.visibility` 独立生效。已完成基础档案但选择 `private` 的用户仍可创建 `campus` 帖子；帖子内容按帖子自身可见性展示，但 feed、详情页和后续推荐入口中的 `PostAuthorSummary` 不得暴露该用户的 `userId`、`major`、`year` 或真实 `nickname`。此时作者摘要统一显示为 `Private profile`，并保留 `profileVisibility: "private"` 作为界面提示和后续权限判断线索。只有 `campus` 或未来明确开放的 `public` profile 可以在帖子作者摘要中展示学术昵称、专业和年级。
+
+`/profiles/[id]` 必须通过服务端可见性 gate 读取档案。已验证校园用户可以读取 `campus` profile；`private` profile 只能由档案本人或明确的服务端平台权限流程读取，对其他用户应返回不可见状态，不得在页面层绕过服务端判断。第一版 MVP 不在 UI 中开放 `public`，但后端 gate 应保留识别能力。
+
 ## 5. Server Actions 与 Route Handlers
 
 默认规则如下：
@@ -92,6 +98,8 @@ action/route
 不要在页面、组件或 action 中重复拼接复杂查询。若多个地方需要相同数据，应通过功能模块服务或查询辅助函数复用。
 
 涉及连接和消息的逻辑必须以连接状态为准。只要连接尚未接受，就不可创建或写入消息线程。
+
+消息功能保留 `MessageThread` 实体，并使用 `/messages/[threadId]` 作为页面入口。`MessageThread.permissionStatus` 只能作为界面和缓存状态提示，不能替代权限判断。读取线程、创建消息和更新已读状态时，服务端必须通过线程对应的 `Connection` 验证当前用户是已接受连接的一方。
 
 ## 7. 环境变量契约
 
@@ -132,6 +140,8 @@ recommendedUserId
 nickname
 major
 year
+profileVisibility
+canRequestConnect
 profileSummary
 sharedSignals
 complementarySignals
@@ -139,6 +149,8 @@ explanationSummary
 conversationStarter
 status
 ```
+
+推荐卡的 profile 字段必须遵守 `profile.visibility`。`campus` 或未来明确开放的 `public` profile 可以展示 `recommendedUserId`、`nickname`、`major`、`year` 和 `profileSummary`，并可设置 `canRequestConnect: true`。`private` profile 不得形成可操作的真实推荐卡；如果系统需要保留一条脱敏 DTO 作为占位或审计提示，必须使用 `recommendedUserId: null`、`nickname: "Private profile"`、`major: null`、`year: null`、`profileSummary: null`、`canRequestConnect: false`、`sharedSignals: []`、`complementarySignals: []`、`conversationStarter: null`，并使用固定隐藏说明，不得泄露可识别档案字段、推荐信号或连接入口。
 
 前端不展示精确分数。后端保存 `scoreSummary` 和 `signalSnapshot`，用于调试和审计。用户操作只能是忽略或请求连接；请求连接成功后，推荐状态更新为 `requested`。
 
@@ -159,7 +171,7 @@ Experience Sharing post
 
 同一个概念不要在不同页面使用不同名称。AI 输出在用户确认前必须标记为建议、草稿或优化内容，不得写成系统已经确认的事实。推荐解释应表达相关性，不评价个人能力，也不制造被算法审判的感觉。
 
-设计变量应集中定义，不在每个页面单独发明颜色、间距、圆角和状态样式。帖子类型、请求状态、AI 状态和可见性状态都应使用统一徽标或标签表达。
+设计变量应集中定义，不在每个页面单独发明颜色、间距、圆角和状态样式。帖子类型、请求状态、AI 状态和可见性状态都应使用统一徽标或标签表达。MVP 界面若展示可见性，只展示 `Private` 和 `Campus`，不要展示或引导选择 `Public`。
 
 ## 11. 事件契约
 

@@ -5,9 +5,10 @@ export const messagePermissionStatusSchema = z.enum(["locked", "available"]);
 export const messageSchema = z.object({
   id: z.string().uuid(),
   threadId: z.string().uuid(),
-  senderUserId: z.string().uuid(),
+  senderId: z.string().uuid(),
   body: z.string().trim().min(1).max(2000),
   createdAt: z.string().datetime(),
+  readAt: z.string().datetime().nullable(),
 });
 
 export const messageThreadSchema = z.object({

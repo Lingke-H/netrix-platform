@@ -14,12 +14,12 @@ export type RecommendationSignalBundle = {
 };
 
 const majorLabelMap: Record<Major, string> = {
-  math: "同专业",
-  "computer-science": "同专业",
-  eee: "同专业",
-  fam: "同专业",
-  ibe: "同专业",
-  other: "同学术背景",
+  math: "Shared major",
+  "computer-science": "Shared major",
+  eee: "Shared major",
+  fam: "Shared major",
+  ibe: "Shared major",
+  other: "Shared academic background",
 };
 
 const yearRank: Record<StudyYear, number> = {
@@ -37,6 +37,7 @@ function uniqueShared(values: string[]) {
 
 function overlap(left: string[], right: string[]) {
   const rightSet = new Set(right.map((item) => item.trim().toLowerCase()));
+
   return uniqueShared(left)
     .filter((item) => rightSet.has(item.trim().toLowerCase()))
     .slice(0, 6);
@@ -46,59 +47,67 @@ function shareByExactLabel(left: string[], right: string[], label: string) {
   return overlap(left, right).map((item) => `${label}: ${item}`);
 }
 
-export function scoreRecommendationMatch(
-  input: RecommendationScoringInput,
-): RecommendationSignalBundle {
+export function scoreRecommendationMatch(input: RecommendationScoringInput): RecommendationSignalBundle {
   const { recipientProfile, candidateProfile } = input;
 
-  const sharedModules = shareByExactLabel(recipientProfile.modules, candidateProfile.modules, "共同课程模块");
-  const sharedInterests = shareByExactLabel(recipientProfile.interests, candidateProfile.interests, "共同兴趣");
-  const sharedHelpTopics = shareByExactLabel(
+  const sharedModules = shareByExactLabel(recipientProfile.modules, candidateProfile.modules, "Shared module");
+  const sharedInterests = shareByExactLabel(recipientProfile.interests, candidateProfile.interests, "Shared interest");
+  const sharedSkills = shareByExactLabel(recipientProfile.skills, candidateProfile.skills, "Shared skill");
+  const candidateCanHelp = shareByExactLabel(
     recipientProfile.helpNeeded,
-    candidateProfile.skillsOffered,
-    "对方可提供帮助",
+    candidateProfile.helpOffered,
+    "Candidate can help with",
   );
-  const sharedSupportTopics = shareByExactLabel(
-    recipientProfile.skillsOffered,
+  const recipientCanHelp = shareByExactLabel(
+    recipientProfile.helpOffered,
     candidateProfile.helpNeeded,
-    "你可提供帮助",
+    "Recipient can help with",
   );
   const sharedCollaboration = overlap(
-    recipientProfile.collaborationPreferences,
-    candidateProfile.collaborationPreferences,
-  ).map((item) => `协作偏好: ${item}`);
+    recipientProfile.collaborationPreference,
+    candidateProfile.collaborationPreference,
+  ).map((item) => `Shared collaboration preference: ${item}`);
 
-  const sharedSignals = uniqueShared([
-    recipientProfile.major === candidateProfile.major ? majorLabelMap[recipientProfile.major] : null,
-    ...sharedModules,
-    ...sharedInterests,
-    ...sharedHelpTopics,
-    ...sharedSupportTopics,
-    ...sharedCollaboration,
-  ].filter((item): item is string => Boolean(item)));
+  const sharedSignals = uniqueShared(
+    [
+      recipientProfile.major === candidateProfile.major ? majorLabelMap[recipientProfile.major] : null,
+      ...sharedModules,
+      ...sharedInterests,
+      ...sharedSkills,
+      ...sharedCollaboration,
+    ].filter((item): item is string => Boolean(item)),
+  );
 
   const yearGap = Math.abs(yearRank[recipientProfile.year] - yearRank[candidateProfile.year]);
   const crossYearPotential = yearGap >= 1 && yearGap <= 2;
 
-  const complementarySignals = uniqueShared([
-    recipientProfile.major !== candidateProfile.major ? `跨专业互补: ${candidateProfile.major}` : null,
-    crossYearPotential ? "跨年级互补" : null,
-    candidateProfile.modules.length > recipientProfile.modules.length ? "对方模块覆盖更广" : null,
-    candidateProfile.skillsOffered.length > recipientProfile.skillsOffered.length ? "对方可提供更多帮助" : null,
-  ].filter((item): item is string => Boolean(item)));
+  const complementarySignals = uniqueShared(
+    [
+      recipientProfile.major !== candidateProfile.major ? `Cross-major complement: ${candidateProfile.major}` : null,
+      crossYearPotential ? "Cross-year complementarity" : null,
+      ...candidateCanHelp,
+      ...recipientCanHelp,
+      candidateProfile.modules.length > recipientProfile.modules.length ? "Candidate has broader module coverage" : null,
+      candidateProfile.helpOffered.length > recipientProfile.helpOffered.length
+        ? "Candidate offers more help areas"
+        : null,
+    ].filter((item): item is string => Boolean(item)),
+  );
 
   const scoreSummary: RecommendationScoreSummary = {
     sameMajor: recipientProfile.major === candidateProfile.major,
     sharedModules: sharedModules.length,
     sharedInterests: sharedInterests.length,
-    helpMatch: sharedHelpTopics.length + sharedSupportTopics.length,
+    sharedSkills: sharedSkills.length,
+    helpMatch: candidateCanHelp.length + recipientCanHelp.length,
     sharedCollaboration: sharedCollaboration.length,
     crossYearPotential,
     totalScore:
       (recipientProfile.major === candidateProfile.major ? 3 : 0) +
       Math.min(sharedModules.length * 2, 6) +
       Math.min(sharedInterests.length, 4) +
-      Math.min((sharedHelpTopics.length + sharedSupportTopics.length) * 2, 4) +
+      Math.min(sharedSkills.length, 2) +
+      Math.min((candidateCanHelp.length + recipientCanHelp.length) * 2, 4) +
       Math.min(sharedCollaboration.length, 2) +
       (crossYearPotential ? 2 : 0),
   };

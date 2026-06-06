@@ -1,5 +1,4 @@
 import {
-  boolean,
   index,
   jsonb,
   pgEnum,
@@ -29,32 +28,35 @@ export const studyYearEnum = pgEnum("study_year", [
   "postgraduate",
 ]);
 
-export const profileVisibilityEnum = pgEnum("profile_visibility", ["campus", "connections", "private"]);
 export const profileCompletionStatusEnum = pgEnum("profile_completion_status", [
-  "not_started",
-  "draft",
-  "completed",
+  "incomplete",
+  "basic_complete",
+  "recommendation_ready",
 ]);
 export const academicPortraitStatusEnum = pgEnum("academic_portrait_status", [
-  "not_requested",
   "draft",
-  "generated",
   "confirmed",
+  "dismissed",
   "failed",
 ]);
-export const postTypeEnum = pgEnum("post_type", ["qa", "resource", "experience"]);
-export const postVisibilityEnum = pgEnum("post_visibility", ["campus", "connections"]);
+export const postTypeEnum = pgEnum("post_type", ["question", "resource", "experience"]);
+export const postStatusEnum = pgEnum("post_status", ["draft", "published", "archived"]);
+export const visibilityEnum = pgEnum("visibility", ["private", "campus", "public"]);
 export const resourceOriginEnum = pgEnum("resource_origin", [
   "campus-resource",
   "student-resource",
   "promoted-post",
 ]);
+export const resourceCurationStatusEnum = pgEnum("resource_curation_status", [
+  "seeded",
+  "featured",
+  "archived",
+]);
 export const recommendationStatusEnum = pgEnum("recommendation_status", [
-  "generated",
-  "viewed",
+  "active",
   "dismissed",
   "requested",
-  "connected",
+  "expired",
 ]);
 export const connectionRequestStatusEnum = pgEnum("connection_request_status", [
   "pending",
@@ -70,19 +72,23 @@ export const aiJobTypeEnum = pgEnum("ai_job_type", [
   "recommendation-explanation",
 ]);
 export const aiJobStatusEnum = pgEnum("ai_job_status", ["queued", "running", "succeeded", "failed"]);
+export const userRoleEnum = pgEnum("user_role", ["student", "admin", "service"]);
 
 export const users = pgTable(
   "users",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    campusEmail: varchar("campus_email", { length: 255 }).notNull(),
-    campusEmailVerified: boolean("campus_email_verified").notNull().default(false),
-    campusEmailVerifiedAt: timestamp("campus_email_verified_at", { withTimezone: true }),
+    authUserId: uuid("auth_user_id").notNull(),
+    email: varchar("email", { length: 255 }).notNull(),
+    emailDomain: varchar("email_domain", { length: 120 }).notNull(),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    role: userRoleEnum("role").notNull().default("student"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
-    campusEmailUnique: uniqueIndex("users_campus_email_unique").on(table.campusEmail),
+    authUserIdUnique: uniqueIndex("users_auth_user_id_unique").on(table.authUserId),
+    emailUnique: uniqueIndex("users_email_unique").on(table.email),
   }),
 );
 
@@ -98,11 +104,12 @@ export const academicProfiles = pgTable(
     year: studyYearEnum("year").notNull(),
     modules: jsonb("modules").$type<string[]>().notNull().default([]),
     interests: jsonb("interests").$type<string[]>().notNull().default([]),
-    skillsOffered: jsonb("skills_offered").$type<string[]>().notNull().default([]),
+    skills: jsonb("skills").$type<string[]>().notNull().default([]),
+    helpOffered: jsonb("help_offered").$type<string[]>().notNull().default([]),
     helpNeeded: jsonb("help_needed").$type<string[]>().notNull().default([]),
-    collaborationPreferences: jsonb("collaboration_preferences").$type<string[]>().notNull().default([]),
-    visibility: profileVisibilityEnum("visibility").notNull().default("campus"),
-    completionStatus: profileCompletionStatusEnum("completion_status").notNull().default("draft"),
+    collaborationPreference: jsonb("collaboration_preference").$type<string[]>().notNull().default([]),
+    visibility: visibilityEnum("visibility").notNull().default("campus"),
+    completionStatus: profileCompletionStatusEnum("completion_status").notNull().default("incomplete"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -119,14 +126,18 @@ export const academicPortraits = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    sourceSnapshot: jsonb("source_snapshot")
+      .$type<Record<string, string | number | boolean | string[] | null>>()
+      .notNull()
+      .default({}),
     summary: text("summary"),
-    currentFocus: jsonb("current_focus").$type<string[]>().notNull().default([]),
-    collaborationStyle: text("collaboration_style"),
-    strengths: jsonb("strengths").$type<string[]>().notNull().default([]),
-    suggestedTopics: jsonb("suggested_topics").$type<string[]>().notNull().default([]),
-    status: academicPortraitStatusEnum("status").notNull().default("not_requested"),
+    suggestedTags: jsonb("suggested_tags").$type<string[]>().notNull().default([]),
+    strengthsDraft: jsonb("strengths_draft").$type<string[]>().notNull().default([]),
+    collaborationDraft: text("collaboration_draft"),
+    status: academicPortraitStatusEnum("status").notNull().default("draft"),
     promptVersion: varchar("prompt_version", { length: 80 }),
     generatedAt: timestamp("generated_at", { withTimezone: true }),
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -139,20 +150,21 @@ export const posts = pgTable(
   "posts",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    authorUserId: uuid("author_user_id")
+    authorId: uuid("author_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     type: postTypeEnum("type").notNull(),
     title: varchar("title", { length: 120 }).notNull(),
-    content: text("content").notNull(),
-    moduleCode: varchar("module_code", { length: 24 }),
+    body: text("body").notNull(),
+    modules: jsonb("modules").$type<string[]>().notNull().default([]),
     tags: jsonb("tags").$type<string[]>().notNull().default([]),
-    visibility: postVisibilityEnum("visibility").notNull().default("campus"),
+    visibility: visibilityEnum("visibility").notNull().default("campus"),
+    status: postStatusEnum("status").notNull().default("draft"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
-    authorIndex: index("posts_author_user_id_idx").on(table.authorUserId),
+    authorIndex: index("posts_author_id_idx").on(table.authorId),
     typeIndex: index("posts_type_idx").on(table.type),
   }),
 );
@@ -163,11 +175,12 @@ export const resourceItems = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     sourcePostId: uuid("source_post_id").references(() => posts.id, { onDelete: "set null" }),
     title: varchar("title", { length: 120 }).notNull(),
-    summary: varchar("summary", { length: 320 }).notNull(),
-    moduleCode: varchar("module_code", { length: 24 }),
+    description: varchar("description", { length: 320 }).notNull(),
+    modules: jsonb("modules").$type<string[]>().notNull().default([]),
     tags: jsonb("tags").$type<string[]>().notNull().default([]),
     url: text("url"),
     origin: resourceOriginEnum("origin").notNull(),
+    curationStatus: resourceCurationStatusEnum("curation_status").notNull().default("seeded"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
@@ -179,12 +192,13 @@ export const recommendations = pgTable(
   "recommendations",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id")
+    recipientUserId: uuid("recipient_user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     recommendedUserId: uuid("recommended_user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    generatedByJobId: uuid("generated_by_job_id"),
     explanationSummary: varchar("explanation_summary", { length: 320 }).notNull(),
     sharedSignals: jsonb("shared_signals").$type<string[]>().notNull().default([]),
     complementarySignals: jsonb("complementary_signals").$type<string[]>().notNull().default([]),
@@ -195,12 +209,25 @@ export const recommendations = pgTable(
       .notNull()
       .default({}),
     promptVersion: varchar("prompt_version", { length: 80 }).notNull(),
-    status: recommendationStatusEnum("status").notNull().default("generated"),
+    llmProvider: varchar("llm_provider", { length: 40 }),
+    llmModel: varchar("llm_model", { length: 120 }),
+    llmRawResponseId: varchar("llm_raw_response_id", { length: 120 }),
+    llmUsage: jsonb("llm_usage")
+      .$type<{
+        inputTokens: number | null;
+        outputTokens: number | null;
+      }>()
+      .notNull()
+      .default({
+        inputTokens: null,
+        outputTokens: null,
+      }),
+    status: recommendationStatusEnum("status").notNull().default("active"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
-    userIndex: index("recommendations_user_id_idx").on(table.userId),
+    recipientIndex: index("recommendations_recipient_user_id_idx").on(table.recipientUserId),
     recommendedUserIndex: index("recommendations_recommended_user_id_idx").on(table.recommendedUserId),
   }),
 );
@@ -209,23 +236,23 @@ export const connectionRequests = pgTable(
   "connection_requests",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    requesterUserId: uuid("requester_user_id")
+    requesterId: uuid("requester_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    recipientUserId: uuid("recipient_user_id")
+    recipientId: uuid("recipient_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     recommendationId: uuid("recommendation_id").references(() => recommendations.id, {
       onDelete: "set null",
     }),
-    messagePreview: varchar("message_preview", { length: 240 }),
+    message: varchar("message", { length: 240 }),
     status: connectionRequestStatusEnum("status").notNull().default("pending"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     respondedAt: timestamp("responded_at", { withTimezone: true }),
   },
   (table) => ({
-    requesterIndex: index("connection_requests_requester_user_id_idx").on(table.requesterUserId),
-    recipientIndex: index("connection_requests_recipient_user_id_idx").on(table.recipientUserId),
+    requesterIndex: index("connection_requests_requester_id_idx").on(table.requesterId),
+    recipientIndex: index("connection_requests_recipient_id_idx").on(table.recipientId),
   }),
 );
 
@@ -243,7 +270,7 @@ export const connections = pgTable(
       .notNull()
       .references(() => connectionRequests.id, { onDelete: "cascade" }),
     status: connectionStatusEnum("status").notNull().default("active"),
-    connectedAt: timestamp("connected_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
     requestIdUnique: uniqueIndex("connections_request_id_unique").on(table.requestId),
@@ -273,11 +300,12 @@ export const messages = pgTable(
     threadId: uuid("thread_id")
       .notNull()
       .references(() => messageThreads.id, { onDelete: "cascade" }),
-    senderUserId: uuid("sender_user_id")
+    senderId: uuid("sender_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     body: text("body").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    readAt: timestamp("read_at", { withTimezone: true }),
   },
   (table) => ({
     threadIndex: index("messages_thread_id_idx").on(table.threadId),
@@ -288,20 +316,21 @@ export const aiJobs = pgTable(
   "ai_jobs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id")
+    createdBy: uuid("created_by")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     type: aiJobTypeEnum("type").notNull(),
     status: aiJobStatusEnum("status").notNull().default("queued"),
     promptVersion: varchar("prompt_version", { length: 80 }).notNull(),
     inputSummary: text("input_summary").notNull(),
-    outputSummary: text("output_summary"),
+    output: jsonb("output").$type<Record<string, unknown> | null>(),
+    errorCode: varchar("error_code", { length: 80 }),
     errorMessage: text("error_message"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     completedAt: timestamp("completed_at", { withTimezone: true }),
   },
   (table) => ({
-    userIndex: index("ai_jobs_user_id_idx").on(table.userId),
+    createdByIndex: index("ai_jobs_created_by_idx").on(table.createdBy),
   }),
 );
 
@@ -309,7 +338,7 @@ export const eventLogs = pgTable(
   "event_logs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    actorId: uuid("actor_id").references(() => users.id, { onDelete: "set null" }),
     eventType: varchar("event_type", { length: 80 }).notNull(),
     objectType: varchar("object_type", { length: 80 }).notNull(),
     objectId: varchar("object_id", { length: 80 }).notNull(),

@@ -1,6 +1,7 @@
 import { recordEvent } from "@/server/events/record";
 import type { AiJobRecord } from "./jobs";
-import type { AcademicPortrait, Recommendation } from "@/features/profile/schemas";
+import type { AcademicPortrait } from "@/features/profile/schemas";
+import type { Recommendation } from "@/features/recommendations/schemas";
 
 export type PersistedAiPortrait = {
   job: AiJobRecord;

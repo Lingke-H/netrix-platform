@@ -11,11 +11,12 @@ function buildProfile(overrides: Partial<AcademicProfile>): AcademicProfile {
     year: "year-2",
     modules: ["CS1010", "CS1231"],
     interests: ["machine learning", "algorithms"],
-    skillsOffered: ["python"],
+    skills: ["python"],
+    helpOffered: ["python"],
     helpNeeded: ["data structures"],
-    collaborationPreferences: ["pair programming", "weekly check-ins"],
+    collaborationPreference: ["pair programming", "weekly check-ins"],
     visibility: "campus",
-    completionStatus: "completed",
+    completionStatus: "basic_complete",
     createdAt: "2026-06-05T00:00:00.000Z",
     updatedAt: "2026-06-05T00:00:00.000Z",
     ...overrides,
@@ -28,26 +29,28 @@ describe("scoreRecommendationMatch", () => {
       recipientProfile: buildProfile({
         modules: ["CS1010", "CS2040"],
         interests: ["machine learning", "data structures"],
-        skillsOffered: ["python"],
+        skills: ["python"],
+        helpOffered: ["python"],
         helpNeeded: ["algorithms"],
       }),
       candidateProfile: buildProfile({
         userId: "22222222-2222-2222-2222-222222222222",
         modules: ["CS1010", "CS2103"],
         interests: ["machine learning", "distributed systems"],
-        skillsOffered: ["algorithms"],
+        skills: ["algorithms"],
+        helpOffered: ["algorithms"],
         helpNeeded: ["python"],
         year: "year-3",
       }),
     });
 
     expect(result.sharedSignals).toEqual(
-      expect.arrayContaining(["同专业", "共同课程模块: CS1010", "共同兴趣: machine learning"]),
+      expect.arrayContaining(["Shared major", "Shared module: CS1010", "Shared interest: machine learning"]),
     );
-    expect(result.complementarySignals).toEqual(expect.arrayContaining(["跨年级互补"]));
+    expect(result.complementarySignals).toEqual(expect.arrayContaining(["Cross-year complementarity"]));
     expect(result.scoreSummary).toMatchObject({
-      sameMajor: true,
       crossYearPotential: true,
+      sameMajor: true,
     });
   });
 });

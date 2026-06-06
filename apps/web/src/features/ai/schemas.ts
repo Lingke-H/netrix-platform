@@ -7,6 +7,8 @@ export {
   type ProfilePortraitOutput,
 } from "@/server/ai/schemas/profile-portrait";
 export {
+  recommendationExplanationInputSchema,
   recommendationExplanationOutputSchema,
+  type RecommendationExplanationInput,
   type RecommendationExplanationOutput,
 } from "@/server/ai/schemas/recommendation-explanation";

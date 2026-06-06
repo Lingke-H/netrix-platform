@@ -11,10 +11,10 @@ export const connectionStatusSchema = z.enum(["active", "archived"]);
 
 export const connectionRequestSchema = z.object({
   id: z.string().uuid(),
-  requesterUserId: z.string().uuid(),
-  recipientUserId: z.string().uuid(),
+  requesterId: z.string().uuid(),
+  recipientId: z.string().uuid(),
   recommendationId: z.string().uuid().nullable(),
-  messagePreview: z.string().trim().min(1).max(240).nullable(),
+  message: z.string().trim().min(1).max(240).nullable(),
   status: connectionRequestStatusSchema,
   createdAt: z.string().datetime(),
   respondedAt: z.string().datetime().nullable(),
@@ -26,7 +26,7 @@ export const connectionSchema = z.object({
   userBId: z.string().uuid(),
   requestId: z.string().uuid(),
   status: connectionStatusSchema,
-  connectedAt: z.string().datetime(),
+  createdAt: z.string().datetime(),
 });
 
 export const connectionRequestActionSchema = z.object({
@@ -34,8 +34,15 @@ export const connectionRequestActionSchema = z.object({
   action: z.enum(["accept", "reject", "cancel"]),
 });
 
+export const createConnectionRequestInputSchema = z.object({
+  recipientId: z.string().uuid(),
+  recommendationId: z.string().uuid(),
+  message: z.string().trim().min(1).max(240).nullable().optional(),
+});
+
 export type ConnectionRequestStatus = z.infer<typeof connectionRequestStatusSchema>;
 export type ConnectionStatus = z.infer<typeof connectionStatusSchema>;
 export type ConnectionRequest = z.infer<typeof connectionRequestSchema>;
 export type Connection = z.infer<typeof connectionSchema>;
 export type ConnectionRequestAction = z.infer<typeof connectionRequestActionSchema>;
+export type CreateConnectionRequestInput = z.infer<typeof createConnectionRequestInputSchema>;

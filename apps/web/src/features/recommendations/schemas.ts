@@ -1,34 +1,92 @@
 import { z } from "zod";
 
-import { majorSchema, studyYearSchema } from "@/features/profile/schemas";
+import { majorSchema, profileCompletionStatusSchema, studyYearSchema, type Visibility } from "@/features/profile/schemas";
 
 export const recommendationStatusSchema = z.enum([
-  "generated",
-  "viewed",
+  "active",
   "dismissed",
   "requested",
-  "connected",
+  "expired",
 ]);
 
-export const recommendationSchema = z.object({
-  recommendationId: z.string().uuid(),
-  recommendedUserId: z.string().uuid(),
-  nickname: z.string().trim().min(2).max(40),
+export const visibleRecommendationProfileSchema = z.object({
+  canRequestConnect: z.literal(true),
   major: majorSchema,
-  year: studyYearSchema,
+  nickname: z.string().trim().min(2).max(40),
   profileSummary: z.string().trim().min(1).max(280),
-  sharedSignals: z.array(z.string().trim().min(1).max(100)).max(6),
-  complementarySignals: z.array(z.string().trim().min(1).max(100)).max(6),
-  explanationSummary: z.string().trim().min(1).max(320),
-  conversationStarter: z.string().trim().min(1).max(200),
+  profileVisibility: z.enum(["campus", "public"]),
+  recommendedUserId: z.string().uuid(),
+  year: studyYearSchema,
+});
+
+export const privateRecommendationProfileSchema = z.object({
+  canRequestConnect: z.literal(false),
+  major: z.null(),
+  nickname: z.literal("Private profile"),
+  profileSummary: z.null(),
+  profileVisibility: z.literal("private"),
+  recommendedUserId: z.null(),
+  year: z.null(),
+});
+
+export const recommendationBaseSchema = z.object({
+  recommendationId: z.string().uuid(),
+  generatedByJobId: z.string().uuid().nullable(),
   status: recommendationStatusSchema,
 });
+
+export const visibleRecommendationSchema = recommendationBaseSchema
+  .extend({
+    sharedSignals: z.array(z.string().trim().min(1).max(100)).max(6),
+    complementarySignals: z.array(z.string().trim().min(1).max(100)).max(6),
+    explanationSummary: z.string().trim().min(1).max(320),
+    conversationStarter: z.string().trim().min(1).max(200),
+  })
+  .merge(visibleRecommendationProfileSchema);
+
+export const privateRecommendationSchema = recommendationBaseSchema
+  .extend({
+    sharedSignals: z.array(z.never()).max(0),
+    complementarySignals: z.array(z.never()).max(0),
+    explanationSummary: z.literal("This recommendation is hidden because the profile is private."),
+    conversationStarter: z.null(),
+  })
+  .merge(privateRecommendationProfileSchema);
+
+export const recommendationProfileSchema = z.discriminatedUnion("profileVisibility", [
+  visibleRecommendationProfileSchema,
+  privateRecommendationProfileSchema,
+]);
+
+export const recommendationSchema = z.discriminatedUnion("profileVisibility", [
+  visibleRecommendationSchema,
+  privateRecommendationSchema,
+]);
 
 export const recommendationActionInputSchema = z.object({
   recommendationId: z.string().uuid(),
   action: z.enum(["dismiss", "request-connect"]),
 });
 
+export const recommendationCandidateProfileSchema = z.object({
+  collaborationPreference: z.array(z.string().trim().min(1).max(80)).max(8),
+  completionStatus: profileCompletionStatusSchema.extract(["basic_complete", "recommendation_ready"]),
+  helpNeeded: z.array(z.string().trim().min(1).max(80)).max(10),
+  helpOffered: z.array(z.string().trim().min(1).max(80)).max(10),
+  interests: z.array(z.string().trim().min(1).max(80)).max(12),
+  major: majorSchema,
+  modules: z.array(z.string().trim().min(1).max(80)).max(12),
+  nickname: z.string().trim().min(2).max(40),
+  skills: z.array(z.string().trim().min(1).max(80)).max(10),
+  updatedAt: z.string().datetime(),
+  userId: z.string().uuid(),
+  visibility: z.literal("campus"),
+  year: studyYearSchema,
+});
+
 export type RecommendationStatus = z.infer<typeof recommendationStatusSchema>;
+export type RecommendationProfileVisibility = Visibility;
+export type RecommendationProfile = z.infer<typeof recommendationProfileSchema>;
 export type Recommendation = z.infer<typeof recommendationSchema>;
 export type RecommendationActionInput = z.infer<typeof recommendationActionInputSchema>;
+export type RecommendationCandidateProfile = z.infer<typeof recommendationCandidateProfileSchema>;

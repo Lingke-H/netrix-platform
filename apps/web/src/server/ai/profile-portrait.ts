@@ -15,13 +15,14 @@ export function buildProfilePortrait(candidate: ProfilePortraitCandidateInput): 
   return {
     id: crypto.randomUUID(),
     userId: candidate.userId,
+    sourceSnapshot: {},
     summary: portrait.summary,
-    currentFocus: portrait.currentFocus,
-    collaborationStyle: portrait.collaborationStyle,
-    strengths: portrait.strengths,
-    suggestedTopics: portrait.suggestedTopics,
-    status: candidate.status ?? "generated",
+    suggestedTags: [...portrait.currentFocus, ...portrait.suggestedTopics].slice(0, 6),
+    strengthsDraft: portrait.strengths,
+    collaborationDraft: portrait.collaborationStyle,
+    status: candidate.status ?? "draft",
     promptVersion: candidate.promptVersion,
     generatedAt: new Date().toISOString(),
+    confirmedAt: null,
   };
 }

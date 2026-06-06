@@ -17,7 +17,7 @@ describe("buildProfilePortrait", () => {
     });
 
     expect(result.userId).toBe("11111111-1111-1111-1111-111111111111");
-    expect(result.status).toBe("generated");
+    expect(result.status).toBe("draft");
     expect(result.summary).toContain("CS student");
   });
 });

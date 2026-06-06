@@ -19,15 +19,18 @@ export function buildRecommendation(candidate: RecommendationCandidateInput): Re
 
   return {
     recommendationId: candidate.recommendationId,
+    canRequestConnect: true,
+    generatedByJobId: null,
     recommendedUserId: candidate.recommendedUserId,
     nickname: candidate.nickname,
     major: candidate.major,
     year: candidate.year,
     profileSummary: candidate.profileSummary,
+    profileVisibility: "campus",
     sharedSignals: explanation.sharedSignals,
     complementarySignals: explanation.complementarySignals,
     explanationSummary: explanation.explanationSummary,
     conversationStarter: explanation.conversationStarter,
-    status: candidate.status ?? "generated",
+    status: candidate.status ?? "active",
   };
 }
