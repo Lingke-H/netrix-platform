@@ -110,6 +110,19 @@ describe("connection request create service", () => {
     });
   });
 
+  it("normalizes connection request form input", () => {
+    const formData = new FormData();
+    formData.set("message", "  Could we compare COMP1048 debugging notes?  ");
+    formData.set("recommendationId", recommendationId);
+    formData.set("recipientId", recipientId);
+
+    expect(parseCreateConnectionRequestInput(formData)).toEqual({
+      message: "Could we compare COMP1048 debugging notes?",
+      recommendationId,
+      recipientId,
+    });
+  });
+
   it("rejects invalid connection request input", () => {
     expect(() =>
       parseCreateConnectionRequestInput({

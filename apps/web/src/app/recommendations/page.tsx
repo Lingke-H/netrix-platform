@@ -1,13 +1,27 @@
 import Link from "next/link";
-import { UserRound } from "lucide-react";
+import { Sparkles, UserRound } from "lucide-react";
 
 import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
+import { createConnectionRequestAction } from "@/features/connections/server/actions";
 import type { Major, StudyYear } from "@/features/profile/schemas";
 import type { Recommendation } from "@/features/recommendations/schemas";
-import { getCurrentUserRecommendationCards } from "@/features/recommendations/server/service";
+import { persistRecommendationDryRunDraftsAction } from "@/features/recommendations/server/actions";
+import { getCurrentUserRecommendationFeed } from "@/features/recommendations/server/service";
 
 export const dynamic = "force-dynamic";
+
+async function persistRecommendationsFormAction() {
+  "use server";
+
+  await persistRecommendationDryRunDraftsAction();
+}
+
+async function createConnectionRequestFormAction(formData: FormData) {
+  "use server";
+
+  await createConnectionRequestAction(formData);
+}
 
 const majorLabels: Record<Major, string> = {
   math: "Math",
@@ -31,14 +45,37 @@ function RecommendationsEmptyState() {
   return (
     <div className="space-y-3 border border-dashed border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-5">
       <p className="text-sm leading-7 text-[var(--color-muted)]">
-        No scored recommendation candidates are ready yet. This can happen when there are not enough campus-visible
-        profiles with overlapping academic signals.
+        No persisted recommendation cards are ready yet. Generate recommendations from your completed academic profile
+        to create durable cards that can become connection requests.
       </p>
       <p className="text-xs leading-6 text-[var(--color-muted)]">
-        This view currently uses in-memory rule scoring and mock explanation generation. It does not create recommendation
-        rows or call OpenAI.
+        Recommendations are generated from campus-visible profiles, transparent rule scoring, and server-side explanation
+        metadata before they are saved to the recommendation feed.
       </p>
     </div>
+  );
+}
+
+function GenerateRecommendationsPanel() {
+  return (
+    <form
+      action={persistRecommendationsFormAction}
+      className="flex flex-wrap items-center justify-between gap-4 border border-[var(--color-line)] bg-[var(--color-surface-strong)] p-5"
+    >
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold text-[var(--color-ink)]">Generate persisted recommendations</h2>
+        <p className="text-sm leading-6 text-[var(--color-muted)]">
+          Save eligible recommendation candidates into your feed, then request a connection from a card.
+        </p>
+      </div>
+      <button
+        type="submit"
+        className="inline-flex h-10 items-center gap-2 border border-[rgba(36,117,95,0.28)] bg-[var(--color-accent-soft)] px-4 text-sm font-semibold text-[var(--color-accent)] transition hover:bg-[rgba(36,117,95,0.16)]"
+      >
+        <Sparkles size={16} aria-hidden="true" />
+        Generate
+      </button>
+    </form>
   );
 }
 
@@ -58,6 +95,31 @@ function SignalList({ label, items }: { label: string; items: string[] }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function RequestConnectionForm({ recommendation }: { recommendation: Extract<Recommendation, { canRequestConnect: true }> }) {
+  return (
+    <form action={createConnectionRequestFormAction} className="space-y-3 border border-[var(--color-line)] bg-[var(--color-surface-strong)] p-4">
+      <input name="recommendationId" type="hidden" value={recommendation.recommendationId} />
+      <input name="recipientId" type="hidden" value={recommendation.recommendedUserId} />
+      <label className="block space-y-2">
+        <span className="text-sm font-semibold text-[var(--color-ink)]">Request message</span>
+        <textarea
+          name="message"
+          rows={3}
+          maxLength={240}
+          className="min-h-20 w-full resize-y border border-[var(--color-line)] bg-white px-3 py-2 text-sm leading-6 text-[var(--color-ink)] outline-none transition focus:border-[var(--color-accent)]"
+          placeholder="Mention a module, shared signal, or study goal."
+        />
+      </label>
+      <button
+        type="submit"
+        className="inline-flex h-9 items-center justify-center border border-[rgba(36,117,95,0.28)] bg-[var(--color-accent-soft)] px-3 text-sm font-semibold text-[var(--color-accent)] transition hover:bg-[rgba(36,117,95,0.16)]"
+      >
+        Request connection
+      </button>
+    </form>
   );
 }
 
@@ -108,24 +170,28 @@ function RecommendationCard({ recommendation }: { recommendation: Recommendation
         <SignalList label="Shared signals" items={recommendation.sharedSignals} />
         <SignalList label="Complementary signals" items={recommendation.complementarySignals} />
       </div>
+
+      {recommendation.canRequestConnect ? <RequestConnectionForm recommendation={recommendation} /> : null}
     </article>
   );
 }
 
 export default async function RecommendationsPage() {
-  const recommendationFeed = await getCurrentUserRecommendationCards();
+  const recommendationFeed = await getCurrentUserRecommendationFeed();
 
   return (
     <PageFrame
       eyebrow="Recommendations"
       title="Recommended Connections"
-      description="Academic connection cards generated from user-confirmed profile signals and mock explanations."
+      description="Persisted academic connection cards generated from profile signals and transparent recommendation metadata."
     >
       <div className="flex flex-wrap items-center gap-3">
         <StatusBadge tone="ready">requires completed profile</StatusBadge>
         <StatusBadge>{recommendationFeed.items.length} recommendations</StatusBadge>
-        <StatusBadge tone="caution">mock explanation</StatusBadge>
+        <StatusBadge tone="ready">persisted feed</StatusBadge>
       </div>
+
+      <GenerateRecommendationsPanel />
 
       {recommendationFeed.items.length === 0 ? (
         <RecommendationsEmptyState />

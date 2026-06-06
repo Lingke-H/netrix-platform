@@ -18,11 +18,13 @@ test-results/
 *.tsbuildinfo
 __pycache__/
 *.pyc
+_tmp_*
 
 # IDE & OS
 .DS_Store
 .vercel
 .supabase
+.agent/
 
 # Media
 *.mov

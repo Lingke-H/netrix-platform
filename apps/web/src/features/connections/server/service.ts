@@ -216,7 +216,9 @@ export function buildConnectionsPageData(
 }
 
 export function parseCreateConnectionRequestInput(input: unknown): CreateConnectionRequestInput {
-  const parsedInput = createConnectionRequestInputSchema.safeParse(input);
+  const parsedInput = createConnectionRequestInputSchema.safeParse(
+    isFormData(input) ? normalizeCreateConnectionRequestFormData(input) : input,
+  );
 
   if (!parsedInput.success) {
     throw new ConnectionRequestCreateError(
@@ -260,6 +262,16 @@ export function normalizeConnectionRequestActionFormData(formData: FormData) {
   return {
     action: getFormText(formData, "action"),
     requestId: getFormText(formData, "requestId"),
+  };
+}
+
+export function normalizeCreateConnectionRequestFormData(formData: FormData) {
+  const message = getFormText(formData, "message");
+
+  return {
+    message: message || null,
+    recommendationId: getFormText(formData, "recommendationId"),
+    recipientId: getFormText(formData, "recipientId"),
   };
 }
 
