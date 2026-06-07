@@ -7,10 +7,6 @@ import {
   persistAiPortrait,
   confirmNickname,
 } from "@/server/ai";
-import { buildNicknameSuggestions } from "@/server/ai/nickname";
-import { buildProfilePortrait } from "@/server/ai/profile-portrait";
-import { createAiJobRecord } from "@/server/ai/jobs";
-import { startAiJob } from "@/server/ai/job-state";
 import {
   normalizeAcademicProfileFormData,
   upsertAcademicProfile,
@@ -45,11 +41,8 @@ export async function onboardWithAiAction(formData: FormData) {
         },
         { db },
       ).then(async (nicknamePipeline) => {
-        const suggestions = buildNicknameSuggestions({
-          explanationOutput: nicknamePipeline.result,
-        });
-        if (suggestions.suggestions.length > 0) {
-          await confirmNickname(db, session.userId, suggestions.suggestions[0].nickname);
+        if (nicknamePipeline.kind === "nickname" && nicknamePipeline.result.suggestions.length > 0) {
+          await confirmNickname(db, session.userId, nicknamePipeline.result.suggestions[0].nickname);
         }
         return nicknamePipeline;
       }),
@@ -62,20 +55,9 @@ export async function onboardWithAiAction(formData: FormData) {
         },
         { db },
       ).then(async (portraitPipeline) => {
-        const portrait = buildProfilePortrait({
-          userId: session.userId,
-          promptVersion: "profile-portrait.v1",
-          explanationOutput: portraitPipeline.result,
-        });
-        const job = createAiJobRecord({
-          userId: session.userId,
-          type: "profile-portrait",
-          status: startAiJob(),
-          promptVersion: "profile-portrait.v1",
-          inputSummary: profileSummary,
-          outputSummary: portrait.summary,
-        });
-        await persistAiPortrait(db, job, portrait);
+        if (portraitPipeline.kind === "profile-portrait") {
+          await persistAiPortrait(db, portraitPipeline.job, portraitPipeline.result);
+        }
         return portraitPipeline;
       }),
     ]);

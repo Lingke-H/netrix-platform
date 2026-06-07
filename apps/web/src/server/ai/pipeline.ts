@@ -1,7 +1,7 @@
 import { buildAiExecutionError, createAiExecutionRequest, executeAiRequest } from "./executor";
 import { aiPromptVersions } from "./contracts";
-import { createAiJobRecord, type CreateAiJobInput } from "./jobs";
-import { createJob } from "./job-service";
+import { type CreateAiJobInput } from "./jobs";
+import { createJob, updateJobStatus } from "./job-service";
 import {
   nicknamePromptInstructions,
   profilePortraitPromptInstructions,
@@ -11,8 +11,8 @@ import { buildNicknameSuggestions } from "./nickname";
 import { buildProfilePortrait } from "./profile-portrait";
 import { buildRecommendation } from "./recommendation";
 import { parseAiResponse } from "./response-parser";
-import { failAiJob, startAiJob, succeedAiJob } from "./job-state";
-import { recordEvent } from "@/server/events/record";
+import { startAiJob } from "./job-state";
+import type { AiJobRecord } from "./jobs";
 import type { NicknameSuggestionOutput } from "./schemas/nickname";
 import type { ProfilePortraitOutput } from "./schemas/profile-portrait";
 import type { RecommendationExplanationOutput } from "./schemas/recommendation-explanation";
@@ -46,20 +46,29 @@ export type AiPromptBundle = {
   instructions: string;
 };
 
-export type AiPipelineRunResult =
-  | ReturnType<typeof buildNicknameSuggestions>
-  | ReturnType<typeof buildProfilePortrait>
-  | ReturnType<typeof buildRecommendation>;
-
 export type AiPipelineRunOptions = {
   db: DbClient;
 };
 
-export type AiPipelineRunOutput = {
-  job: ReturnType<typeof createAiJobRecord>;
-  promptBundle: AiPromptBundle;
-  result: AiPipelineRunResult;
-};
+export type AiPipelineRunOutput =
+  | {
+      kind: "nickname";
+      job: AiJobRecord;
+      promptBundle: AiPromptBundle;
+      result: ReturnType<typeof buildNicknameSuggestions>;
+    }
+  | {
+      kind: "profile-portrait";
+      job: AiJobRecord;
+      promptBundle: AiPromptBundle;
+      result: ReturnType<typeof buildProfilePortrait>;
+    }
+  | {
+      kind: "recommendation-explanation";
+      job: AiJobRecord;
+      promptBundle: AiPromptBundle;
+      result: ReturnType<typeof buildRecommendation>;
+    };
 
 export function getAiPromptBundle(kind: AiPipelineKind): AiPromptBundle {
   if (kind === "nickname") {
@@ -81,10 +90,9 @@ export function buildAiPipelineJob(input: AiPipelineInput): CreateAiJobInput {
   return {
     userId: input.userId,
     type: input.kind,
-    status: "succeeded",
+    status: "running",
     promptVersion: aiPromptVersions[input.kind],
     inputSummary: input.inputSummary,
-    outputSummary: JSON.stringify(input.output),
   };
 }
 
@@ -108,25 +116,11 @@ export async function runAiPipeline(input: AiPipelineInput, options: AiPipelineR
     const execution = await executeAiRequest(request);
     const parsed = parseAiResponse(input.kind, execution.rawOutput);
 
-    const finishedJob = createAiJobRecord({
-      ...job,
-      status: succeedAiJob(),
-      outputSummary: JSON.stringify(parsed),
-      completedAt: new Date().toISOString(),
-    });
-
-    await recordEvent(db, {
-      eventType: input.kind === "profile-portrait" ? "ai_portrait_generated" : "recommendation_generated",
-      objectType: input.kind,
-      objectId: job.id,
-      metadata: {
-        userId: input.userId,
-        promptVersion: promptBundle.promptVersion,
-      },
-    }, input.userId);
+    const finishedJob = await updateJobStatus(db, job.id, "succeeded", JSON.stringify(parsed));
 
     if (input.kind === "nickname") {
       return {
+        kind: input.kind,
         job: finishedJob,
         promptBundle,
         result: buildNicknameSuggestions({ explanationOutput: parsed }),
@@ -135,6 +129,7 @@ export async function runAiPipeline(input: AiPipelineInput, options: AiPipelineR
 
     if (input.kind === "profile-portrait") {
       return {
+        kind: input.kind,
         job: finishedJob,
         promptBundle,
         result: buildProfilePortrait({
@@ -146,6 +141,7 @@ export async function runAiPipeline(input: AiPipelineInput, options: AiPipelineR
     }
 
     return {
+      kind: input.kind,
       job: finishedJob,
       promptBundle,
       result: buildRecommendation({
@@ -160,41 +156,7 @@ export async function runAiPipeline(input: AiPipelineInput, options: AiPipelineR
     };
   } catch (error) {
     const aiError = buildAiExecutionError(input.kind, error instanceof Error ? error.message : "Unknown AI error");
-    const failedJob = createAiJobRecord({
-      ...job,
-      status: failAiJob(),
-      errorMessage: aiError.message,
-      completedAt: new Date().toISOString(),
-    });
-
-    await recordEvent(db, {
-      eventType: input.kind === "profile-portrait" ? "ai_portrait_generated" : "recommendation_generated",
-      objectType: input.kind,
-      objectId: job.id,
-      metadata: {
-        userId: input.userId,
-        promptVersion: promptBundle.promptVersion,
-        error: aiError.message,
-      },
-    }, input.userId);
-
-    return {
-      job: failedJob,
-      promptBundle,
-      result: buildRecommendation({
-        recommendationId: "00000000-0000-0000-0000-000000000000",
-        recommendedUserId: input.userId,
-        nickname: "Temp",
-        major: "other",
-        year: "foundation",
-        profileSummary: input.inputSummary,
-        explanationOutput: {
-          explanationSummary: aiError.message,
-          sharedSignals: [],
-          complementarySignals: [],
-          conversationStarter: "Try again later.",
-        },
-      }),
-    };
+    await updateJobStatus(db, job.id, "failed", null, aiError.message);
+    throw new Error(aiError.message);
   }
 }

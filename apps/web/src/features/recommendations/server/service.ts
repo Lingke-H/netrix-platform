@@ -1179,24 +1179,35 @@ export async function buildRecommendationPersistenceDryRunForUser(
   const seenRecommendationPairs = new Set<string>();
   const buildResults = await Promise.all(
     scoredCandidates.map(async (scoredCandidate) => {
-      const cardResult = await buildRecommendationCardFromScoredCandidateWithJob(
-        db,
-        actorUserId,
-        profile,
-        scoredCandidate,
-      );
-
-      if (!cardResult.ok) {
-        return null;
-      }
-
       const generation = await generateRecommendationExplanation(profile, scoredCandidate);
 
       if (!generation.ok) {
+        await recordEvent(db, {
+          eventType: "recommendation_generated",
+          objectType: "recommendation",
+          objectId: scoredCandidate.candidate.userId,
+          metadata: {
+            recipientUserId: actorUserId,
+            recommendedUserId: scoredCandidate.candidate.userId,
+            error: "INVALID_RECOMMENDATION_EXPLANATION_OUTPUT",
+          },
+        }, actorUserId);
+
         return null;
       }
 
       const card = buildRecommendationCardFromSuccessfulGeneration(scoredCandidate, generation);
+      await recordEvent(db, {
+        eventType: "recommendation_generated",
+        objectType: "recommendation",
+        objectId: card.recommendationId,
+        metadata: {
+          recipientUserId: actorUserId,
+          recommendedUserId: card.recommendedUserId,
+          score: scoredCandidate.score,
+        },
+      }, actorUserId);
+
       const draft = buildRecommendationInsertDraft({
         card,
         generation,

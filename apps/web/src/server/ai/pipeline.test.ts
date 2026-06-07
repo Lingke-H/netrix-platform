@@ -12,7 +12,7 @@ describe("getAiPromptBundle", () => {
 });
 
 describe("buildAiPipelineJob", () => {
-  it("creates a successful job skeleton", () => {
+  it("creates a running job skeleton", () => {
     const job = buildAiPipelineJob({
       kind: "nickname",
       userId: "11111111-1111-1111-1111-111111111111",
@@ -22,5 +22,6 @@ describe("buildAiPipelineJob", () => {
 
     expect(job.type).toBe("nickname");
     expect(job.promptVersion).toBe("nickname.v1");
+    expect(job.status).toBe("running");
   });
 });
