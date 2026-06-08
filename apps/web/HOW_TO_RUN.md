@@ -103,6 +103,18 @@ corepack pnpm install
 ### 环境变量缺失
 检查 `apps/web/.env.local` 是否存在，以及里面是否有关键字段。
 
+如果打开 `/feed`、`/recommendations`、`/connections`、`/messages/[threadId]` 等页面时全部跳转到：
+
+```text
+/auth?error=supabase-env-missing
+```
+
+说明当前已经进入真实 Supabase Auth gate，但本地缺少 Supabase 环境变量。这不是前端页面坏了。详细原因和修复步骤见：
+
+```text
+docs/dev/local-auth-preview-blocker.md
+```
+
 ### 数据库或 AI 报错
 说明你填的后端服务信息还不完整，先确认：
 - Supabase
