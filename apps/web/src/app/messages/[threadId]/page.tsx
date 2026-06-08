@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { MessageCircle, Send } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 
 import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
+import { MessageSubmitButton } from "@/features/messages/components/message-submit-button";
 import type { Message, MessageThread } from "@/features/messages/schemas";
 import { createMessageAction } from "@/features/messages/server/actions";
 import { getAcceptedMessageThreadDataForUser } from "@/features/messages/server/service";
@@ -47,6 +47,42 @@ function EmptyMessageState() {
   );
 }
 
+function LockedMessageState({ threadId }: { threadId: string }) {
+  return (
+    <PageFrame
+      eyebrow="Messages"
+      title="Thread Unavailable"
+      description="Messages are only visible after an accepted connection is available for the signed-in student."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <StatusBadge tone="caution">locked</StatusBadge>
+        <StatusBadge>thread {compactId(threadId)}</StatusBadge>
+      </div>
+
+      <div className="space-y-4 border border-[var(--color-line)] bg-[var(--color-surface-strong)] p-5">
+        <p className="text-sm leading-7 text-[var(--color-muted)]">
+          This conversation cannot be opened from the current session. The thread may not exist, may belong to another
+          accepted connection, or may still be locked until the connection request is accepted.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/connections"
+            className="inline-flex h-9 items-center justify-center border border-[rgba(36,117,95,0.28)] bg-[var(--color-accent-soft)] px-3 text-sm font-semibold text-[var(--color-accent)] transition hover:bg-[rgba(36,117,95,0.16)]"
+          >
+            Back to connections
+          </Link>
+          <Link
+            href="/recommendations"
+            className="inline-flex h-9 items-center justify-center border border-[var(--color-line)] bg-white px-3 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+          >
+            View recommendations
+          </Link>
+        </div>
+      </div>
+    </PageFrame>
+  );
+}
+
 function MessageBubble({ currentUserId, message }: { currentUserId: string; message: Message }) {
   const isOwnMessage = message.senderId === currentUserId;
 
@@ -86,13 +122,7 @@ function MessageComposer({ threadId }: { threadId: string }) {
           placeholder="Share a module question, meeting idea, or useful resource."
         />
       </label>
-      <button
-        type="submit"
-        className="inline-flex h-10 items-center gap-2 border border-[rgba(36,117,95,0.28)] bg-[var(--color-accent-soft)] px-4 text-sm font-semibold text-[var(--color-accent)] transition hover:bg-[rgba(36,117,95,0.16)]"
-      >
-        <Send size={16} aria-hidden="true" />
-        Send
-      </button>
+      <MessageSubmitButton />
     </form>
   );
 }
@@ -103,7 +133,7 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
   const data = await getAcceptedMessageThreadDataForUser(createDb(), gate.session.userId, threadId);
 
   if (!data) {
-    notFound();
+    return <LockedMessageState threadId={threadId} />;
   }
 
   const peerUserId = getPeerUserId(data.thread, gate.session.userId);

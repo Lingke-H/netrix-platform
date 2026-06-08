@@ -2,17 +2,19 @@ import { and, desc, eq, inArray, or } from "drizzle-orm";
 
 import {
   connectionRequestActionSchema,
+  connectionPeerProfileSchema,
   connectionRequestSchema,
   connectionSchema,
   createConnectionRequestInputSchema,
   type Connection,
+  type ConnectionPeerProfile,
   type ConnectionRequestAction,
   type CreateConnectionRequestInput,
   type ConnectionRequest,
 } from "@/features/connections/schemas";
 import type { ConnectionsPageData } from "@/features/connections/types";
 import { createDb, type DbClient } from "@/server/db/client";
-import { connectionRequests, connections, messageThreads, recommendations } from "@/server/db/schema";
+import { academicProfiles, connectionRequests, connections, messageThreads, recommendations } from "@/server/db/schema";
 import { assertPermissionScope } from "@/server/permissions";
 import { recordEvent } from "@/server/events/record";
 import { requireCompletedAcademicProfile } from "@/server/auth/onboarding-gate";
@@ -91,6 +93,17 @@ export type ConnectionReadRow = {
   status: "active" | "archived";
   userAId: string;
   userBId: string;
+};
+
+export type ConnectionPeerProfileReadRow = {
+  interests: string[];
+  major: "math" | "computer-science" | "eee" | "fam" | "ibe" | "other";
+  modules: string[];
+  nickname: string;
+  skills: string[];
+  userId: string;
+  visibility: "private" | "campus" | "public";
+  year: "foundation" | "year-1" | "year-2" | "year-3" | "year-4" | "postgraduate";
 };
 
 export type ConnectionRequestResponseExistingRequest = {
@@ -203,19 +216,68 @@ export function buildConnectionDto(row: ConnectionReadRow): Connection {
   });
 }
 
+function buildPeerProfileSummary(row: Pick<ConnectionPeerProfileReadRow, "interests" | "modules" | "skills">) {
+  const summaryParts = [
+    row.modules.length > 0 ? `Modules: ${row.modules.slice(0, 3).join(", ")}` : null,
+    row.interests.length > 0 ? `Interests: ${row.interests.slice(0, 3).join(", ")}` : null,
+    row.skills.length > 0 ? `Skills: ${row.skills.slice(0, 3).join(", ")}` : null,
+  ].filter((part): part is string => part !== null);
+
+  return summaryParts.length > 0 ? summaryParts.join(". ") : null;
+}
+
+export function buildConnectionPeerProfileDto(row: ConnectionPeerProfileReadRow): ConnectionPeerProfile {
+  return connectionPeerProfileSchema.parse({
+    major: row.major,
+    nickname: row.nickname,
+    profileSummary: buildPeerProfileSummary(row),
+    userId: row.userId,
+    visibility: row.visibility,
+    year: row.year,
+  });
+}
+
 export function buildConnectionsPageData(
   requestRows: ConnectionRequestReadRow[],
   connectionRows: ConnectionReadRow[],
+  peerProfiles: Map<string, ConnectionPeerProfile> = new Map(),
+  actorUserId?: string,
 ): ConnectionsPageData {
+  if (!actorUserId) {
+    return {
+      accepted: connectionRows.map(buildConnectionDto),
+      pending: requestRows
+        .filter((request) => request.status === "pending")
+        .map(buildConnectionRequestDto),
+      rejected: requestRows
+        .filter((request) => request.status === "rejected")
+        .map(buildConnectionRequestDto),
+    };
+  }
+
+  const getRequestPeerId = (request: ConnectionRequestReadRow) =>
+    request.recipientId === actorUserId ? request.requesterId : request.recipientId;
+  const getConnectionPeerId = (connection: ConnectionReadRow) =>
+    connection.userAId === actorUserId ? connection.userBId : connection.userAId;
+
   return {
-    accepted: connectionRows.map(buildConnectionDto),
+    accepted: connectionRows.map((connection) => ({
+      ...buildConnectionDto(connection),
+      peerProfile: peerProfiles.get(getConnectionPeerId(connection)) ?? null,
+    })),
     pending: requestRows
       .filter((request) => request.status === "pending")
-      .map(buildConnectionRequestDto),
+      .map((request) => ({
+        ...buildConnectionRequestDto(request),
+        peerProfile: peerProfiles.get(getRequestPeerId(request)) ?? null,
+      })),
     rejected: requestRows
       .filter((request) => request.status === "rejected")
-      .map(buildConnectionRequestDto),
-  };
+      .map((request) => ({
+        ...buildConnectionRequestDto(request),
+        peerProfile: peerProfiles.get(getRequestPeerId(request)) ?? null,
+      })),
+  } satisfies ConnectionsPageData;
 }
 
 export function parseCreateConnectionRequestInput(input: unknown): CreateConnectionRequestInput {
@@ -531,6 +593,48 @@ export async function listAcceptedConnectionsForConnectionsPage(
     .orderBy(desc(connections.createdAt));
 }
 
+function getConnectionPagePeerIds(
+  actorUserId: string,
+  requestRows: ConnectionRequestReadRow[],
+  connectionRows: ConnectionReadRow[],
+) {
+  const peerIds = new Set<string>();
+
+  requestRows.forEach((request) => {
+    peerIds.add(request.recipientId === actorUserId ? request.requesterId : request.recipientId);
+  });
+  connectionRows.forEach((connection) => {
+    peerIds.add(connection.userAId === actorUserId ? connection.userBId : connection.userAId);
+  });
+
+  return [...peerIds];
+}
+
+export async function listConnectionPeerProfiles(
+  db: DbClient,
+  peerIds: string[],
+): Promise<Map<string, ConnectionPeerProfile>> {
+  if (peerIds.length === 0) {
+    return new Map();
+  }
+
+  const rows = await db
+    .select({
+      interests: academicProfiles.interests,
+      major: academicProfiles.major,
+      modules: academicProfiles.modules,
+      nickname: academicProfiles.nickname,
+      skills: academicProfiles.skills,
+      userId: academicProfiles.userId,
+      visibility: academicProfiles.visibility,
+      year: academicProfiles.year,
+    })
+    .from(academicProfiles)
+    .where(inArray(academicProfiles.userId, peerIds));
+
+  return new Map(rows.map((row) => [row.userId, buildConnectionPeerProfileDto(row)]));
+}
+
 export async function getConnectionsPageDataForUser(
   db: DbClient,
   actorUserId: string,
@@ -539,8 +643,12 @@ export async function getConnectionsPageDataForUser(
     listConnectionRequestsForConnectionsPage(db, actorUserId),
     listAcceptedConnectionsForConnectionsPage(db, actorUserId),
   ]);
+  const peerProfiles = await listConnectionPeerProfiles(
+    db,
+    getConnectionPagePeerIds(actorUserId, requestRows, connectionRows),
+  );
 
-  return buildConnectionsPageData(requestRows, connectionRows);
+  return buildConnectionsPageData(requestRows, connectionRows, peerProfiles, actorUserId);
 }
 
 export async function createConnectionRequestForUser(

@@ -1,14 +1,23 @@
 import type {
   Connection,
+  ConnectionPeerProfile,
   ConnectionRequest,
   ConnectionRequestAction,
   ConnectionRequestStatus,
 } from "./schemas";
 
+export type ConnectionRequestWithPeer = ConnectionRequest & {
+  peerProfile?: ConnectionPeerProfile | null;
+};
+
+export type ConnectionWithPeer = Connection & {
+  peerProfile?: ConnectionPeerProfile | null;
+};
+
 export type ConnectionsPageData = {
-  pending: ConnectionRequest[];
-  accepted: Connection[];
-  rejected: ConnectionRequest[];
+  pending: ConnectionRequestWithPeer[];
+  accepted: ConnectionWithPeer[];
+  rejected: ConnectionRequestWithPeer[];
 };
 
 export type ConnectionRequestButtonState = {

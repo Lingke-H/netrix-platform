@@ -3,9 +3,11 @@ import { Clock, Link2, XCircle } from "lucide-react";
 
 import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
-import type { Connection, ConnectionRequest } from "@/features/connections/schemas";
+import { ConnectionActionButton } from "@/features/connections/components/connection-action-button";
 import { respondToConnectionRequestAction } from "@/features/connections/server/actions";
 import { getConnectionsPageDataForUser } from "@/features/connections/server/service";
+import type { ConnectionRequestWithPeer, ConnectionWithPeer } from "@/features/connections/types";
+import type { Major, StudyYear } from "@/features/profile/schemas";
 import { requirePageCompletedAcademicProfile } from "@/server/auth/redirects";
 import { createDb } from "@/server/db/client";
 
@@ -28,6 +30,24 @@ function compactId(value: string) {
   return value.slice(0, 8);
 }
 
+const majorLabels: Record<Major, string> = {
+  math: "Math",
+  "computer-science": "Computer Science",
+  eee: "EEE",
+  fam: "FAM",
+  ibe: "IBE",
+  other: "Other",
+};
+
+const studyYearLabels: Record<StudyYear, string> = {
+  foundation: "Foundation",
+  "year-1": "Year 1",
+  "year-2": "Year 2",
+  "year-3": "Year 3",
+  "year-4": "Year 4",
+  postgraduate: "Postgraduate",
+};
+
 function EmptyState({ text }: { text: string }) {
   return (
     <div className="border border-dashed border-[var(--color-line)] bg-[rgba(255,255,255,0.72)] p-5 text-sm leading-7 text-[var(--color-muted)]">
@@ -40,10 +60,14 @@ function RequestActionForm({
   action,
   children,
   requestId,
+  icon,
+  pendingLabel,
   tone = "info",
 }: {
   action: "accept" | "reject" | "cancel";
   children: React.ReactNode;
+  icon: "accept" | "cancel";
+  pendingLabel: string;
   requestId: string;
   tone?: "ready" | "caution" | "info";
 }) {
@@ -60,17 +84,45 @@ function RequestActionForm({
       <input name="next" type="hidden" value="/connections" />
       <input name="requestId" type="hidden" value={requestId} />
       <input name="action" type="hidden" value={action} />
-      <button
-        type="submit"
-        className={`inline-flex h-9 items-center justify-center border px-3 text-sm font-semibold transition ${buttonClasses}`}
-      >
-        {children}
-      </button>
+      <ConnectionActionButton className={buttonClasses} icon={icon} label={children} pendingLabel={pendingLabel} />
     </form>
   );
 }
 
-function PendingRequestCard({ currentUserId, request }: { currentUserId: string; request: ConnectionRequest }) {
+function PeerHeading({
+  fallbackId,
+  item,
+}: {
+  fallbackId: string;
+  item: ConnectionRequestWithPeer | ConnectionWithPeer;
+}) {
+  if (!item.peerProfile) {
+    return <h2 className="text-lg font-semibold text-[var(--color-ink)]">Student {compactId(fallbackId)}</h2>;
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <Link
+          href={`/profiles/${item.peerProfile.userId}`}
+          className="text-lg font-semibold text-[var(--color-ink)] transition hover:text-[var(--color-accent)]"
+        >
+          {item.peerProfile.nickname}
+        </Link>
+        <StatusBadge>{item.peerProfile.visibility}</StatusBadge>
+      </div>
+      <div className="flex flex-wrap gap-2 text-sm font-medium text-[var(--color-muted)]">
+        <span>{majorLabels[item.peerProfile.major]}</span>
+        <span>{studyYearLabels[item.peerProfile.year]}</span>
+      </div>
+      {item.peerProfile.profileSummary ? (
+        <p className="max-w-2xl text-sm leading-7 text-[var(--color-muted)]">{item.peerProfile.profileSummary}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function PendingRequestCard({ currentUserId, request }: { currentUserId: string; request: ConnectionRequestWithPeer }) {
   const isIncoming = request.recipientId === currentUserId;
   const peerId = isIncoming ? request.requesterId : request.recipientId;
 
@@ -82,7 +134,7 @@ function PendingRequestCard({ currentUserId, request }: { currentUserId: string;
             <StatusBadge tone={isIncoming ? "caution" : "info"}>{isIncoming ? "incoming" : "outgoing"}</StatusBadge>
             <StatusBadge>{request.status}</StatusBadge>
           </div>
-          <h2 className="text-lg font-semibold text-[var(--color-ink)]">Student {compactId(peerId)}</h2>
+          <PeerHeading fallbackId={peerId} item={request} />
           <p className="text-sm leading-7 text-[var(--color-muted)]">
             Created {formatDate(request.createdAt)}
             {request.recommendationId ? ` from recommendation ${compactId(request.recommendationId)}` : ""}
@@ -100,15 +152,15 @@ function PendingRequestCard({ currentUserId, request }: { currentUserId: string;
       <div className="flex flex-wrap gap-2">
         {isIncoming ? (
           <>
-            <RequestActionForm action="accept" requestId={request.id} tone="ready">
+            <RequestActionForm action="accept" icon="accept" pendingLabel="Accepting..." requestId={request.id} tone="ready">
               Accept
             </RequestActionForm>
-            <RequestActionForm action="reject" requestId={request.id} tone="caution">
+            <RequestActionForm action="reject" icon="cancel" pendingLabel="Rejecting..." requestId={request.id} tone="caution">
               Reject
             </RequestActionForm>
           </>
         ) : (
-          <RequestActionForm action="cancel" requestId={request.id} tone="caution">
+          <RequestActionForm action="cancel" icon="cancel" pendingLabel="Cancelling..." requestId={request.id} tone="caution">
             Cancel
           </RequestActionForm>
         )}
@@ -117,7 +169,7 @@ function PendingRequestCard({ currentUserId, request }: { currentUserId: string;
   );
 }
 
-function AcceptedConnectionCard({ connection, currentUserId }: { connection: Connection; currentUserId: string }) {
+function AcceptedConnectionCard({ connection, currentUserId }: { connection: ConnectionWithPeer; currentUserId: string }) {
   const peerId = connection.userAId === currentUserId ? connection.userBId : connection.userAId;
 
   return (
@@ -129,7 +181,7 @@ function AcceptedConnectionCard({ connection, currentUserId }: { connection: Con
             <StatusBadge>accepted</StatusBadge>
             {connection.messageThreadId ? <StatusBadge tone="ready">messages available</StatusBadge> : null}
           </div>
-          <h2 className="text-lg font-semibold text-[var(--color-ink)]">Student {compactId(peerId)}</h2>
+          <PeerHeading fallbackId={peerId} item={connection} />
           <p className="text-sm leading-7 text-[var(--color-muted)]">
             Connected {formatDate(connection.createdAt)} from request {compactId(connection.requestId)}
           </p>
@@ -153,7 +205,7 @@ function AcceptedConnectionCard({ connection, currentUserId }: { connection: Con
   );
 }
 
-function RejectedRequestCard({ request }: { request: ConnectionRequest }) {
+function RejectedRequestCard({ request }: { request: ConnectionRequestWithPeer }) {
   const respondedAt = request.respondedAt ? formatDate(request.respondedAt) : "No response time";
 
   return (
@@ -164,9 +216,7 @@ function RejectedRequestCard({ request }: { request: ConnectionRequest }) {
             <StatusBadge tone="caution">{request.status}</StatusBadge>
             <StatusBadge>{respondedAt}</StatusBadge>
           </div>
-          <h2 className="text-lg font-semibold text-[var(--color-ink)]">
-            Request {compactId(request.id)}
-          </h2>
+          <PeerHeading fallbackId={request.recipientId} item={request} />
           {request.message ? <p className="text-sm leading-7 text-[var(--color-muted)]">{request.message}</p> : null}
         </div>
         <XCircle size={20} className="text-[var(--color-warning)]" aria-hidden="true" />

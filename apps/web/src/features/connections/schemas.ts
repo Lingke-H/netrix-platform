@@ -20,6 +20,15 @@ export const connectionRequestSchema = z.object({
   respondedAt: z.string().datetime().nullable(),
 });
 
+export const connectionPeerProfileSchema = z.object({
+  userId: z.string().uuid(),
+  nickname: z.string().min(1),
+  major: z.enum(["math", "computer-science", "eee", "fam", "ibe", "other"]),
+  year: z.enum(["foundation", "year-1", "year-2", "year-3", "year-4", "postgraduate"]),
+  visibility: z.enum(["private", "campus", "public"]),
+  profileSummary: z.string().nullable(),
+});
+
 export const connectionSchema = z.object({
   id: z.string().uuid(),
   messageThreadId: z.string().uuid().nullable(),
@@ -45,5 +54,6 @@ export type ConnectionRequestStatus = z.infer<typeof connectionRequestStatusSche
 export type ConnectionStatus = z.infer<typeof connectionStatusSchema>;
 export type ConnectionRequest = z.infer<typeof connectionRequestSchema>;
 export type Connection = z.infer<typeof connectionSchema>;
+export type ConnectionPeerProfile = z.infer<typeof connectionPeerProfileSchema>;
 export type ConnectionRequestAction = z.infer<typeof connectionRequestActionSchema>;
 export type CreateConnectionRequestInput = z.infer<typeof createConnectionRequestInputSchema>;

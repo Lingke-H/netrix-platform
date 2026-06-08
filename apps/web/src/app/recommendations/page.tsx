@@ -3,6 +3,8 @@ import { Sparkles, UserRound } from "lucide-react";
 
 import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
+import { ConnectionActionButton } from "@/features/connections/components/connection-action-button";
+import { getConnectionRequestState } from "@/features/connections/components/connection-request-state";
 import { createConnectionRequestAction } from "@/features/connections/server/actions";
 import type { Major, StudyYear } from "@/features/profile/schemas";
 import type { Recommendation } from "@/features/recommendations/schemas";
@@ -101,6 +103,8 @@ function SignalList({ label, items }: { label: string; items: string[] }) {
 }
 
 function RequestConnectionForm({ recommendation }: { recommendation: Extract<Recommendation, { canRequestConnect: true }> }) {
+  const requestState = getConnectionRequestState(recommendation, true);
+
   return (
     <form action={createConnectionRequestFormAction} className="space-y-3 border border-[var(--color-line)] bg-[var(--color-surface-strong)] p-4">
       <input name="next" type="hidden" value="/recommendations" />
@@ -112,16 +116,21 @@ function RequestConnectionForm({ recommendation }: { recommendation: Extract<Rec
           name="message"
           rows={3}
           maxLength={240}
+          disabled={requestState.disabled}
           className="min-h-20 w-full resize-y border border-[var(--color-line)] bg-white px-3 py-2 text-sm leading-6 text-[var(--color-ink)] outline-none transition focus:border-[var(--color-accent)]"
           placeholder="Mention a module, shared signal, or study goal."
         />
       </label>
-      <button
-        type="submit"
-        className="inline-flex h-9 items-center justify-center border border-[rgba(36,117,95,0.28)] bg-[var(--color-accent-soft)] px-3 text-sm font-semibold text-[var(--color-accent)] transition hover:bg-[rgba(36,117,95,0.16)]"
-      >
-        Request connection
-      </button>
+      <div className="flex flex-wrap items-center gap-3">
+        <ConnectionActionButton
+          className="h-9 border-[rgba(36,117,95,0.28)] bg-[var(--color-accent-soft)] text-[var(--color-accent)] enabled:hover:bg-[rgba(36,117,95,0.16)]"
+          disabled={requestState.disabled}
+          icon="request"
+          label={requestState.label}
+          pendingLabel="Requesting..."
+        />
+        <p className="text-xs leading-6 text-[var(--color-muted)]">{requestState.helper}</p>
+      </div>
     </form>
   );
 }

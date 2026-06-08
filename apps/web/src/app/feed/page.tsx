@@ -1,10 +1,14 @@
 import Link from "next/link";
+import { Network, UserCircle } from "lucide-react";
 
 import { PageFrame } from "@/components/page-frame";
 import { StatusBadge } from "@/components/status-badge";
+import { getCurrentUserConnectionsPageData } from "@/features/connections/server/service";
 import type { PostAuthorSummary, PostFeedItem } from "@/features/posts/schemas";
 import { getCurrentUserCampusFeed } from "@/features/posts/server/service";
 import { getPostAuthorProfileHref } from "@/features/posts/types";
+import { getCurrentUserProfileData } from "@/features/profile/server/service";
+import { getCurrentUserRecommendationFeed } from "@/features/recommendations/server/service";
 import { resolveProtectedPageData } from "@/server/auth/redirects";
 
 export const dynamic = "force-dynamic";
@@ -79,8 +83,95 @@ function FeedPostCard({ post }: { post: PostFeedItem }) {
   );
 }
 
+function FeedSidecar({
+  acceptedCount,
+  pendingCount,
+  profileStatus,
+  recommendationCount,
+}: {
+  acceptedCount: number;
+  pendingCount: number;
+  profileStatus: string;
+  recommendationCount: number;
+}) {
+  return (
+    <aside className="space-y-4">
+      <section className="space-y-3 border border-[var(--color-line)] bg-white p-4">
+        <div className="flex items-center gap-2">
+          <UserCircle size={18} className="text-[var(--color-accent)]" aria-hidden="true" />
+          <h2 className="text-sm font-semibold text-[var(--color-ink)]">Profile progress</h2>
+        </div>
+        <StatusBadge tone={profileStatus === "incomplete" ? "caution" : "ready"}>{profileStatus}</StatusBadge>
+        <Link
+          href="/me"
+          className="inline-flex h-9 items-center justify-center border border-[var(--color-line)] bg-white px-3 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+        >
+          Review profile
+        </Link>
+      </section>
+
+      <section className="space-y-3 border border-[var(--color-line)] bg-white p-4">
+        <div className="flex items-center gap-2">
+          <Network size={18} className="text-[var(--color-accent)]" aria-hidden="true" />
+          <h2 className="text-sm font-semibold text-[var(--color-ink)]">Academic network</h2>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <StatusBadge tone={recommendationCount > 0 ? "ready" : "caution"}>
+            {recommendationCount} recommendations
+          </StatusBadge>
+          <StatusBadge tone={pendingCount > 0 ? "caution" : "info"}>{pendingCount} pending</StatusBadge>
+          <StatusBadge tone={acceptedCount > 0 ? "ready" : "info"}>{acceptedCount} accepted</StatusBadge>
+        </div>
+        <p className="text-sm leading-7 text-[var(--color-muted)]">
+          Use recommendations to request academic connections, then continue into messages after acceptance.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/recommendations"
+            className="inline-flex h-9 items-center justify-center border border-[var(--color-line)] bg-white px-3 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+          >
+            Recommendations
+          </Link>
+          <Link
+            href="/connections"
+            className="inline-flex h-9 items-center justify-center border border-[var(--color-line)] bg-white px-3 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+          >
+            Connections
+          </Link>
+        </div>
+      </section>
+    </aside>
+  );
+}
+
 export default async function FeedPage() {
-  const feed = await resolveProtectedPageData("/feed", () => getCurrentUserCampusFeed());
+  const { connections, feed, profileData, recommendations } = await resolveProtectedPageData("/feed", async () => {
+    const [campusFeed, currentProfileData] = await Promise.all([
+      getCurrentUserCampusFeed(),
+      getCurrentUserProfileData(),
+    ]);
+    const [recommendationFeed, connectionsPageData] =
+      currentProfileData.gate.state === "profile_ready"
+        ? await Promise.all([getCurrentUserRecommendationFeed(), getCurrentUserConnectionsPageData()])
+        : [
+            {
+              hasEnoughSignals: false,
+              items: [],
+            },
+            {
+              accepted: [],
+              pending: [],
+              rejected: [],
+            },
+          ];
+
+    return {
+      connections: connectionsPageData,
+      feed: campusFeed,
+      profileData: currentProfileData,
+      recommendations: recommendationFeed,
+    };
+  });
 
   return (
     <PageFrame
@@ -93,18 +184,32 @@ export default async function FeedPage() {
         <StatusBadge>campus</StatusBadge>
         <StatusBadge>{feed.items.length} posts</StatusBadge>
       </div>
-      {feed.items.length === 0 ? (
-        <FeedEmptyState />
-      ) : (
-        <div className="space-y-4">
-          {feed.items.map((post) => (
-            <FeedPostCard key={post.id} post={post} />
-          ))}
-          {feed.hasNextPage ? (
-            <p className="text-sm leading-7 text-[var(--color-muted)]">More posts are available beyond this first page.</p>
-          ) : null}
+
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+        {feed.items.length === 0 ? (
+          <FeedEmptyState />
+        ) : (
+          <div className="space-y-4">
+            {feed.items.map((post) => (
+              <FeedPostCard key={post.id} post={post} />
+            ))}
+            {feed.hasNextPage ? (
+              <p className="text-sm leading-7 text-[var(--color-muted)]">
+                More posts are available beyond this first page.
+              </p>
+            ) : null}
+          </div>
+        )}
+
+        <div className="lg:sticky lg:top-6 lg:self-start">
+          <FeedSidecar
+            acceptedCount={connections.accepted.length}
+            pendingCount={connections.pending.length}
+            profileStatus={profileData.routeState.completionStatus}
+            recommendationCount={recommendations.items.length}
+          />
         </div>
-      )}
+      </div>
     </PageFrame>
   );
 }
