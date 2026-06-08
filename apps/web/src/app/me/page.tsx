@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Check, Pencil, X } from "lucide-react";
+import { Pencil } from "lucide-react";
 
 import { PageFrame } from "@/components/page-frame";
+import { PendingSubmitButton } from "@/components/pending-submit-button";
 import { StatusBadge } from "@/components/status-badge";
 import type { AiJobRecord } from "@/server/ai/jobs";
 import type { AcademicPortrait, AcademicProfile } from "@/features/profile/schemas";
@@ -117,22 +118,20 @@ function PortraitSection({ portrait }: { portrait: AcademicPortrait }) {
         {portrait.status !== "confirmed" && portrait.status !== "dismissed" ? (
           <div className="flex items-center gap-2">
             <form action={confirmPortraitAction}>
-              <button
-                type="submit"
+              <PendingSubmitButton
+                icon="check"
+                label="Confirm"
+                pendingLabel="Confirming..."
                 className="inline-flex h-8 items-center gap-2 border border-[rgba(36,117,95,0.28)] bg-[var(--color-accent-soft)] px-3 text-xs font-semibold text-[var(--color-accent)] transition hover:bg-[rgba(36,117,95,0.16)]"
-              >
-                <Check size={14} aria-hidden="true" />
-                Confirm
-              </button>
+              />
             </form>
             <form action={dismissPortraitAction}>
-              <button
-                type="submit"
+              <PendingSubmitButton
+                icon="dismiss"
+                label="Dismiss"
+                pendingLabel="Dismissing..."
                 className="inline-flex h-8 items-center gap-2 border border-[rgba(181,106,30,0.3)] bg-[rgba(181,106,30,0.1)] px-3 text-xs font-semibold text-[var(--color-warning)] transition hover:bg-[rgba(181,106,30,0.16)]"
-              >
-                <X size={14} aria-hidden="true" />
-                Dismiss
-              </button>
+              />
             </form>
           </div>
         ) : null}

@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { LogOut, Mail, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 import { PageFrame } from "@/components/page-frame";
+import { PendingSubmitButton } from "@/components/pending-submit-button";
 import { StatusBadge } from "@/components/status-badge";
 import { requestEmailSignInAction, signOutAction } from "@/features/auth/server/actions";
 import { sanitizeAuthNextRoute } from "@/features/auth/server/routing";
@@ -117,7 +118,7 @@ function AuthNotice({
   return null;
 }
 
-function EmailSignInForm({ nextRoute }: { nextRoute: string }) {
+function EmailSignInForm({ disabled, nextRoute }: { disabled: boolean; nextRoute: string }) {
   return (
     <form action={requestEmailSignInAction} className="space-y-4 border border-[var(--color-line)] bg-white p-5">
       <input name="next" type="hidden" value={nextRoute} />
@@ -130,15 +131,21 @@ function EmailSignInForm({ nextRoute }: { nextRoute: string }) {
           autoComplete="email"
           placeholder="student@nottingham.edu.cn"
           required
+          disabled={disabled}
         />
       </label>
-      <button
-        type="submit"
+      <PendingSubmitButton
+        disabled={disabled}
+        icon="mail"
+        label={disabled ? "Auth config required" : "Send verification link"}
+        pendingLabel="Sending link..."
         className="inline-flex h-10 items-center gap-2 bg-[var(--color-accent)] px-4 text-sm font-semibold text-white transition hover:bg-[rgba(29,107,87,0.9)]"
-      >
-        <Mail size={16} aria-hidden="true" />
-        Send verification link
-      </button>
+      />
+      {disabled ? (
+        <p className="text-xs leading-6 text-[var(--color-muted)]">
+          Configure Supabase URL and anon key before requesting campus email links.
+        </p>
+      ) : null}
     </form>
   );
 }
@@ -175,13 +182,12 @@ function SignedInPanel({
           Continue
         </Link>
         <form action={signOutAction}>
-          <button
-            type="submit"
+          <PendingSubmitButton
+            icon="log-out"
+            label="Sign out"
+            pendingLabel="Signing out..."
             className="inline-flex h-10 items-center gap-2 border border-[var(--color-line)] bg-[var(--color-surface-strong)] px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-          >
-            <LogOut size={16} aria-hidden="true" />
-            Sign out
-          </button>
+          />
         </form>
       </div>
     </div>
@@ -237,7 +243,7 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
           userEmail={sessionResult.session.email}
         />
       ) : (
-        <EmailSignInForm nextRoute={nextRoute} />
+        <EmailSignInForm disabled={sessionResult.errorCode === "supabase-env-missing"} nextRoute={nextRoute} />
       )}
 
       <DemoBypassPanel enabled={demoBypass.enabled} userId={demoBypass.userId} />

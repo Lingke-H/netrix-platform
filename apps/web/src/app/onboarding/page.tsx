@@ -1,6 +1,5 @@
-import { Save, Sparkles } from "lucide-react";
-
 import { PageFrame } from "@/components/page-frame";
+import { PendingSubmitButton } from "@/components/pending-submit-button";
 import { StatusBadge } from "@/components/status-badge";
 import type { AcademicProfile } from "@/features/profile/schemas";
 import { upsertAcademicProfileAction } from "@/features/profile/server/actions";
@@ -161,22 +160,20 @@ function AcademicProfileForm({ nextRoute, profile }: { nextRoute: string; profil
           </span>
         </label>
 
-        <button
-          type="submit"
+        <PendingSubmitButton
+          icon="save"
+          label="Save profile"
+          pendingLabel="Saving..."
           className="inline-flex items-center justify-center gap-2 bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[rgba(29,107,87,0.9)]"
-        >
-          <Save size={16} aria-hidden="true" />
-          Save profile
-        </button>
+        />
 
-        <button
-          type="submit"
+        <PendingSubmitButton
           formAction={onboardWithAiAction}
+          icon="sparkles"
+          label="Save & generate AI profile"
+          pendingLabel="Generating..."
           className="inline-flex items-center justify-center gap-2 border border-[rgba(36,117,95,0.28)] bg-[var(--color-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--color-accent)] transition hover:bg-[rgba(36,117,95,0.16)]"
-        >
-          <Sparkles size={16} aria-hidden="true" />
-          Save &amp; generate AI profile
-        </button>
+        />
       </div>
     </form>
   );

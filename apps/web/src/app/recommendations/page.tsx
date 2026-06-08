@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Sparkles, UserRound } from "lucide-react";
+import { UserRound } from "lucide-react";
 
 import { PageFrame } from "@/components/page-frame";
+import { PendingSubmitButton } from "@/components/pending-submit-button";
 import { StatusBadge } from "@/components/status-badge";
 import { ConnectionActionButton } from "@/features/connections/components/connection-action-button";
 import { getConnectionRequestState } from "@/features/connections/components/connection-request-state";
@@ -72,13 +73,12 @@ function GenerateRecommendationsPanel() {
           Save eligible recommendation candidates into your feed, then request a connection from a card.
         </p>
       </div>
-      <button
-        type="submit"
+      <PendingSubmitButton
+        icon="sparkles"
+        label="Generate"
+        pendingLabel="Generating..."
         className="inline-flex h-10 items-center gap-2 border border-[rgba(36,117,95,0.28)] bg-[var(--color-accent-soft)] px-4 text-sm font-semibold text-[var(--color-accent)] transition hover:bg-[rgba(36,117,95,0.16)]"
-      >
-        <Sparkles size={16} aria-hidden="true" />
-        Generate
-      </button>
+      />
     </form>
   );
 }
